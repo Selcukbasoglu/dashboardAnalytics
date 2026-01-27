@@ -1,0 +1,130 @@
+{
+  "symbols": {
+    "TUPRS": {
+      "aliases": [
+        "tupras",
+        "tüpraş",
+        "turkiye petrol rafinerileri",
+        "türkiye petrol rafinerileri",
+        "turkiye petrol rafinerileri a.s",
+        "turkiye petrol rafinerileri as"
+      ],
+      "sector": "ENERGY",
+      "asset_class": "BIST",
+      "currency": "TRY",
+      "yahoo": "TUPRS.IS"
+    },
+    "ENJSA": {
+      "aliases": [
+        "enerjisa",
+        "enerjisa enerji",
+        "enerjisa enerji a.s",
+        "enerjisa enerji as"
+      ],
+      "sector": "POWER_UTILITIES",
+      "asset_class": "BIST",
+      "currency": "TRY",
+      "yahoo": "ENJSA.IS"
+    },
+    "SOKM": {
+      "aliases": [
+        "sok market",
+        "şok market",
+        "sok",
+        "şok",
+        "sokm",
+        "sokm is",
+        "sok marketler",
+        "sok marketler ticaret"
+      ],
+      "sector": "CONSUMER_RETAIL",
+      "asset_class": "BIST",
+      "currency": "TRY",
+      "yahoo": "SOKM.IS"
+    },
+    "ASTOR": {
+      "aliases": [
+        "astor",
+        "astor enerji",
+        "astor enerji a.s",
+        "astor enerji as",
+        "astorenergy"
+      ],
+      "sector": "INDUSTRIALS",
+      "asset_class": "BIST",
+      "currency": "TRY",
+      "yahoo": "ASTOR.IS"
+    },
+    "AMD": {
+      "aliases": [
+        "amd",
+        "advanced micro devices",
+        "advanced micro devices inc"
+      ],
+      "sector": "SEMICONDUCTORS",
+      "asset_class": "NASDAQ",
+      "currency": "USD",
+      "yahoo": "AMD"
+    },
+    "PLTR": {
+      "aliases": [
+        "pltr",
+        "palantir",
+        "palantir technologies",
+        "palantir technologies inc"
+      ],
+      "sector": "SOFTWARE",
+      "asset_class": "NASDAQ",
+      "currency": "USD",
+      "yahoo": "PLTR"
+    },
+    "SIL": {
+      "aliases": [
+        "sil",
+        "global x silver miners etf",
+        "silver miners etf"
+      ],
+      "sector": "METALS_MINERS",
+      "asset_class": "NASDAQ",
+      "currency": "USD",
+      "yahoo": "SIL"
+    },
+    "HL": {
+      "aliases": [
+        "hl",
+        "hecla",
+        "hecla mining",
+        "hecla mining company"
+      ],
+      "sector": "METALS_MINERS",
+      "asset_class": "NASDAQ",
+      "currency": "USD",
+      "yahoo": "HL"
+    },
+    "BTC": {
+      "aliases": [
+        "btc",
+        "bitcoin",
+        "xbt"
+      ],
+      "sector": "CRYPTO",
+      "asset_class": "CRYPTO",
+      "currency": "USD",
+      "yahoo": "BTC-USD"
+    },
+    "NEAR": {
+      "aliases": [
+        "near",
+        "near protocol",
+        "nearprotocol"
+      ],
+      "sector": "CRYPTO",
+      "asset_class": "CRYPTO",
+      "currency": "USD",
+      "yahoo": "NEAR-USD"
+    }
+  },
+  "fx": {
+    "USDTRY": "USDTRY=X"
+  }
+}

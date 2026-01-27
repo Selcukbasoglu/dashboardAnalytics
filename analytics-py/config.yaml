@@ -1,0 +1,26 @@
+database_url: "sqlite:///./dev.db"
+retention_days: 8
+news_ingest_interval_minutes: 30
+impact_half_life_hours: 12
+weights:
+  market: 0.6
+  news: 0.4
+news_rank_weights:
+  relevance: 0.45
+  quality: 0.30
+  impact: 0.15
+  scope: 0.10
+thresholds:
+  flip_hysteresis: 0.12
+  neutral_band_pct: 0.0015
+  min_confidence: 0.35
+min_hold_minutes:
+  "15m": 20
+  "1h": 75
+  "3h": 200
+  "6h": 340
+source_tiers:
+  primary: ["sec.gov", "treasury.gov", "whitehouse.gov", "ecb.europa.eu", "federalreserve.gov"]
+  tier1: ["reuters.com", "bloomberg.com", "ft.com", "wsj.com"]
+  tier2: ["yahoo.com", "forbes.com", "fortune.com", "marketscreener.com", "investing.com"]
+  social: ["twitter.com", "x.com", "reddit.com", "t.me"]

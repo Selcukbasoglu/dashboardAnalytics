@@ -1,0 +1,2534 @@
+[
+  {
+    "entity_id": "company:coinbase",
+    "entity_type": "company",
+    "canonical_name": "Coinbase",
+    "tickers": [
+      "COIN"
+    ],
+    "synonyms": [
+      "Coinbase"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "crypto_exchange"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:paypal",
+    "entity_type": "company",
+    "canonical_name": "PayPal",
+    "tickers": [
+      "PYPL"
+    ],
+    "synonyms": [
+      "PayPal"
+    ],
+    "primary_category": "finans/fintech",
+    "theme_labels": [
+      "fintech_crypto_rails",
+      "crypto_adjacent"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "fund_product:grayscale_bitcoin_trust",
+    "entity_type": "fund_product",
+    "canonical_name": "Grayscale Bitcoin Trust",
+    "tickers": [
+      "GBTC"
+    ],
+    "synonyms": [
+      "Grayscale Bitcoin Trust"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_fund_product"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:strategy",
+    "entity_type": "company",
+    "canonical_name": "Strategy",
+    "tickers": [
+      "MSTR"
+    ],
+    "synonyms": [
+      "Strategy",
+      "MicroStrategy"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "crypto_treasury_exposure"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:block",
+    "entity_type": "company",
+    "canonical_name": "Block",
+    "tickers": [
+      "XYZ"
+    ],
+    "synonyms": [
+      "Block",
+      "Square"
+    ],
+    "primary_category": "finans/fintech",
+    "theme_labels": [
+      "fintech_crypto_rails",
+      "crypto_adjacent"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:iris_energy",
+    "entity_type": "company",
+    "canonical_name": "Iris Energy",
+    "tickers": [
+      "IREN"
+    ],
+    "synonyms": [
+      "Iris Energy"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner",
+      "ai_datacenter_power"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:bitmine",
+    "entity_type": "company",
+    "canonical_name": "Bitmine",
+    "tickers": [
+      "BMNR"
+    ],
+    "synonyms": [
+      "Bitmine"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner",
+      "eth_treasury_exposure"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:galaxy_digital",
+    "entity_type": "company",
+    "canonical_name": "Galaxy Digital",
+    "tickers": [
+      "GLXY",
+      "7LX.F"
+    ],
+    "synonyms": [
+      "Galaxy Digital"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "crypto_merchant_bank"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:cipher_mining",
+    "entity_type": "company",
+    "canonical_name": "Cipher Mining",
+    "tickers": [
+      "CIFR"
+    ],
+    "synonyms": [
+      "Cipher Mining"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:riot_platforms",
+    "entity_type": "company",
+    "canonical_name": "Riot Platforms",
+    "tickers": [
+      "RIOT"
+    ],
+    "synonyms": [
+      "Riot Platforms",
+      "Riot"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner",
+      "ai_datacenter_power"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:hut_8",
+    "entity_type": "company",
+    "canonical_name": "Hut 8",
+    "tickers": [
+      "HUT"
+    ],
+    "synonyms": [
+      "Hut 8"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner",
+      "ai_datacenter_power"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:terawulf",
+    "entity_type": "company",
+    "canonical_name": "TeraWulf",
+    "tickers": [
+      "WULF"
+    ],
+    "synonyms": [
+      "TeraWulf"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:core_scientific",
+    "entity_type": "company",
+    "canonical_name": "Core Scientific",
+    "tickers": [
+      "CORZ"
+    ],
+    "synonyms": [
+      "Core Scientific"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner",
+      "ai_datacenter_power"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:metaplanet",
+    "entity_type": "company",
+    "canonical_name": "Metaplanet",
+    "tickers": [
+      "3350.T",
+      "MTPLF"
+    ],
+    "synonyms": [
+      "Metaplanet"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "crypto_treasury_exposure"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:mara_holdings",
+    "entity_type": "company",
+    "canonical_name": "MARA Holdings",
+    "tickers": [
+      "MARA"
+    ],
+    "synonyms": [
+      "MARA Holdings",
+      "Marathon Digital",
+      "Marathon"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:cleanspark",
+    "entity_type": "company",
+    "canonical_name": "CleanSpark",
+    "tickers": [
+      "CLSK"
+    ],
+    "synonyms": [
+      "CleanSpark"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:bitdeer",
+    "entity_type": "company",
+    "canonical_name": "Bitdeer",
+    "tickers": [
+      "BTDR"
+    ],
+    "synonyms": [
+      "Bitdeer"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner",
+      "ai_datacenter_power"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:bitfarms",
+    "entity_type": "company",
+    "canonical_name": "Bitfarms",
+    "tickers": [
+      "BITF"
+    ],
+    "synonyms": [
+      "Bitfarms"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:phoenix_group",
+    "entity_type": "company",
+    "canonical_name": "Phoenix Group",
+    "tickers": [
+      "PHX.AE"
+    ],
+    "synonyms": [
+      "Phoenix Group"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "bitcoin_miner"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:grayscale_investments",
+    "entity_type": "company",
+    "canonical_name": "Grayscale Investments",
+    "tickers": [],
+    "synonyms": [
+      "Grayscale Investments",
+      "Grayscale"
+    ],
+    "primary_category": "kripto",
+    "theme_labels": [
+      "crypto_asset_manager"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:saudi_aramco",
+    "entity_type": "company",
+    "canonical_name": "Saudi Aramco",
+    "tickers": [
+      "2222.SR"
+    ],
+    "synonyms": [
+      "Saudi Aramco",
+      "Aramco"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "oil_gas_upstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:exxon_mobil",
+    "entity_type": "company",
+    "canonical_name": "Exxon Mobil",
+    "tickers": [
+      "XOM"
+    ],
+    "synonyms": [
+      "Exxon Mobil",
+      "Exxon"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "oil_gas_upstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:chevron",
+    "entity_type": "company",
+    "canonical_name": "Chevron",
+    "tickers": [
+      "CVX"
+    ],
+    "synonyms": [
+      "Chevron"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "oil_gas_upstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:petrochina",
+    "entity_type": "company",
+    "canonical_name": "PetroChina",
+    "tickers": [
+      "0857.HK"
+    ],
+    "synonyms": [
+      "PetroChina"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "oil_gas_upstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:shell",
+    "entity_type": "company",
+    "canonical_name": "Shell",
+    "tickers": [
+      "SHEL"
+    ],
+    "synonyms": [
+      "Shell"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "oil_gas_upstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:ge_vernova",
+    "entity_type": "company",
+    "canonical_name": "GE Vernova",
+    "tickers": [
+      "GEV"
+    ],
+    "synonyms": [
+      "GE Vernova"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "power_utilities"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:nextera_energy",
+    "entity_type": "company",
+    "canonical_name": "NextEra Energy",
+    "tickers": [
+      "NEE"
+    ],
+    "synonyms": [
+      "NextEra Energy",
+      "NextEra"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "power_utilities"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:iberdrola",
+    "entity_type": "company",
+    "canonical_name": "Iberdrola",
+    "tickers": [
+      "IBE.MC"
+    ],
+    "synonyms": [
+      "Iberdrola"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "power_utilities"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:totalenergies",
+    "entity_type": "company",
+    "canonical_name": "TotalEnergies",
+    "tickers": [
+      "TTE"
+    ],
+    "synonyms": [
+      "TotalEnergies",
+      "Total"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "oil_gas_upstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:cnooc",
+    "entity_type": "company",
+    "canonical_name": "CNOOC",
+    "tickers": [
+      "CNOOC",
+      "0883.HK"
+    ],
+    "synonyms": [
+      "CNOOC"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "oil_gas_upstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:siemens_energy",
+    "entity_type": "company",
+    "canonical_name": "Siemens Energy",
+    "tickers": [
+      "ENR.F"
+    ],
+    "synonyms": [
+      "Siemens Energy"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "power_utilities"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:constellation_energy",
+    "entity_type": "company",
+    "canonical_name": "Constellation Energy",
+    "tickers": [
+      "CEG"
+    ],
+    "synonyms": [
+      "Constellation Energy"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "power_utilities",
+      "ai_datacenter_power"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:conocophillips",
+    "entity_type": "company",
+    "canonical_name": "ConocoPhillips",
+    "tickers": [
+      "COP"
+    ],
+    "synonyms": [
+      "ConocoPhillips"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "oil_gas_upstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:china_shenhua",
+    "entity_type": "company",
+    "canonical_name": "China Shenhua",
+    "tickers": [
+      "601088.SS"
+    ],
+    "synonyms": [
+      "China Shenhua",
+      "Shenhua"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "coal_power"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:enel",
+    "entity_type": "company",
+    "canonical_name": "Enel",
+    "tickers": [
+      "ENEL.MI"
+    ],
+    "synonyms": [
+      "Enel"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "power_utilities"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:sinopec",
+    "entity_type": "company",
+    "canonical_name": "Sinopec",
+    "tickers": [
+      "600028.SS"
+    ],
+    "synonyms": [
+      "Sinopec",
+      "China Petroleum & Chemical"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "oil_gas_upstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:enbridge",
+    "entity_type": "company",
+    "canonical_name": "Enbridge",
+    "tickers": [
+      "ENB"
+    ],
+    "synonyms": [
+      "Enbridge"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "lng_natgas",
+      "midstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:southern_company",
+    "entity_type": "company",
+    "canonical_name": "Southern Company",
+    "tickers": [
+      "SO"
+    ],
+    "synonyms": [
+      "Southern Company"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "power_utilities"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:duke_energy",
+    "entity_type": "company",
+    "canonical_name": "Duke Energy",
+    "tickers": [
+      "DUK"
+    ],
+    "synonyms": [
+      "Duke Energy"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "power_utilities"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:bp",
+    "entity_type": "company",
+    "canonical_name": "BP",
+    "tickers": [
+      "BP"
+    ],
+    "synonyms": [
+      "BP",
+      "BP plc"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "oil_gas_upstream"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:nvidia",
+    "entity_type": "company",
+    "canonical_name": "NVIDIA",
+    "tickers": [
+      "NVDA"
+    ],
+    "synonyms": [
+      "NVIDIA"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "semiconductors",
+      "ai_compute_demand"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:alphabet",
+    "entity_type": "company",
+    "canonical_name": "Alphabet",
+    "tickers": [
+      "GOOG",
+      "GOOGL"
+    ],
+    "synonyms": [
+      "Alphabet",
+      "Google"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "big_tech_platform",
+      "cloud_platform"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:apple",
+    "entity_type": "company",
+    "canonical_name": "Apple",
+    "tickers": [
+      "AAPL"
+    ],
+    "synonyms": [
+      "Apple"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "big_tech_platform"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:microsoft",
+    "entity_type": "company",
+    "canonical_name": "Microsoft",
+    "tickers": [
+      "MSFT"
+    ],
+    "synonyms": [
+      "Microsoft"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "big_tech_platform",
+      "cloud_platform",
+      "ai_compute_demand"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:amazon",
+    "entity_type": "company",
+    "canonical_name": "Amazon",
+    "tickers": [
+      "AMZN"
+    ],
+    "synonyms": [
+      "Amazon",
+      "AWS"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "big_tech_platform",
+      "cloud_platform"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:tsmc",
+    "entity_type": "company",
+    "canonical_name": "TSMC",
+    "tickers": [
+      "TSMC",
+      "TSM"
+    ],
+    "synonyms": [
+      "TSMC",
+      "Taiwan Semiconductor"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "semiconductors"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:broadcom",
+    "entity_type": "company",
+    "canonical_name": "Broadcom",
+    "tickers": [
+      "AVGO"
+    ],
+    "synonyms": [
+      "Broadcom"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "semiconductors"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:meta",
+    "entity_type": "company",
+    "canonical_name": "Meta",
+    "tickers": [
+      "META"
+    ],
+    "synonyms": [
+      "Meta",
+      "Facebook",
+      "Instagram"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "big_tech_platform"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:tesla",
+    "entity_type": "company",
+    "canonical_name": "Tesla",
+    "tickers": [
+      "TSLA"
+    ],
+    "synonyms": [
+      "Tesla"
+    ],
+    "primary_category": "teknoloji/otomotiv",
+    "theme_labels": [
+      "automotive_tech",
+      "ai_compute_demand",
+      "crypto_treasury_exposure"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:tencent",
+    "entity_type": "company",
+    "canonical_name": "Tencent",
+    "tickers": [
+      "TCEHY"
+    ],
+    "synonyms": [
+      "Tencent"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "big_tech_platform"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:samsung_electronics",
+    "entity_type": "company",
+    "canonical_name": "Samsung Electronics",
+    "tickers": [
+      "005930.KS"
+    ],
+    "synonyms": [
+      "Samsung Electronics",
+      "Samsung"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "semiconductors"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:oracle",
+    "entity_type": "company",
+    "canonical_name": "Oracle",
+    "tickers": [
+      "ORCL"
+    ],
+    "synonyms": [
+      "Oracle"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "software_platform",
+      "cloud_platform"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:asml",
+    "entity_type": "company",
+    "canonical_name": "ASML",
+    "tickers": [
+      "ASML"
+    ],
+    "synonyms": [
+      "ASML",
+      "ASML Holding"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "semiconductors"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:palantir",
+    "entity_type": "company",
+    "canonical_name": "Palantir",
+    "tickers": [
+      "PLTR"
+    ],
+    "synonyms": [
+      "Palantir"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "software_platform"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:alibaba",
+    "entity_type": "company",
+    "canonical_name": "Alibaba",
+    "tickers": [
+      "BABA"
+    ],
+    "synonyms": [
+      "Alibaba"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "big_tech_platform"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:micron",
+    "entity_type": "company",
+    "canonical_name": "Micron",
+    "tickers": [
+      "MU"
+    ],
+    "synonyms": [
+      "Micron"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "semiconductors"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:amd",
+    "entity_type": "company",
+    "canonical_name": "AMD",
+    "tickers": [
+      "AMD"
+    ],
+    "synonyms": [
+      "AMD",
+      "Advanced Micro Devices"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "semiconductors"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:netflix",
+    "entity_type": "company",
+    "canonical_name": "Netflix",
+    "tickers": [
+      "NFLX"
+    ],
+    "synonyms": [
+      "Netflix"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "big_tech_platform"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:sk_hynix",
+    "entity_type": "company",
+    "canonical_name": "SK Hynix",
+    "tickers": [
+      "000660.KS"
+    ],
+    "synonyms": [
+      "SK Hynix"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "semiconductors"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:cisco",
+    "entity_type": "company",
+    "canonical_name": "Cisco",
+    "tickers": [
+      "CSCO"
+    ],
+    "synonyms": [
+      "Cisco"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "networking"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:jpmorgan_chase",
+    "entity_type": "company",
+    "canonical_name": "JPMorgan Chase",
+    "tickers": [
+      "JPM"
+    ],
+    "synonyms": [
+      "JPMorgan Chase",
+      "JPMorgan"
+    ],
+    "primary_category": "finans",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:bank_of_america",
+    "entity_type": "company",
+    "canonical_name": "Bank of America",
+    "tickers": [
+      "BAC"
+    ],
+    "synonyms": [
+      "Bank of America"
+    ],
+    "primary_category": "finans",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:wells_fargo",
+    "entity_type": "company",
+    "canonical_name": "Wells Fargo",
+    "tickers": [
+      "WFC"
+    ],
+    "synonyms": [
+      "Wells Fargo"
+    ],
+    "primary_category": "finans",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:citigroup",
+    "entity_type": "company",
+    "canonical_name": "Citigroup",
+    "tickers": [
+      "C"
+    ],
+    "synonyms": [
+      "Citigroup"
+    ],
+    "primary_category": "finans",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:goldman_sachs",
+    "entity_type": "company",
+    "canonical_name": "Goldman Sachs",
+    "tickers": [
+      "GS"
+    ],
+    "synonyms": [
+      "Goldman Sachs"
+    ],
+    "primary_category": "finans",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:morgan_stanley",
+    "entity_type": "company",
+    "canonical_name": "Morgan Stanley",
+    "tickers": [
+      "MS"
+    ],
+    "synonyms": [
+      "Morgan Stanley"
+    ],
+    "primary_category": "finans",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:blackrock",
+    "entity_type": "company",
+    "canonical_name": "BlackRock",
+    "tickers": [
+      "BLK"
+    ],
+    "synonyms": [
+      "BlackRock"
+    ],
+    "primary_category": "finans",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:equinor",
+    "entity_type": "company",
+    "canonical_name": "Equinor",
+    "tickers": [
+      "EQNR"
+    ],
+    "synonyms": [
+      "Equinor"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "energy_major"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:petrobras",
+    "entity_type": "company",
+    "canonical_name": "Petrobras",
+    "tickers": [
+      "PBR"
+    ],
+    "synonyms": [
+      "Petrobras"
+    ],
+    "primary_category": "enerji",
+    "theme_labels": [
+      "energy_major"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:meta_platforms",
+    "entity_type": "company",
+    "canonical_name": "Meta Platforms",
+    "tickers": [
+      "META"
+    ],
+    "synonyms": [
+      "Meta Platforms",
+      "Meta"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "technology_major"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:asml_holding",
+    "entity_type": "company",
+    "canonical_name": "ASML Holding",
+    "tickers": [
+      "ASML.AS",
+      "ASML"
+    ],
+    "synonyms": [
+      "ASML Holding"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "technology_major"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:sap",
+    "entity_type": "company",
+    "canonical_name": "SAP",
+    "tickers": [
+      "SAP.DE",
+      "SAP"
+    ],
+    "synonyms": [
+      "SAP"
+    ],
+    "primary_category": "teknoloji",
+    "theme_labels": [
+      "technology_major"
+    ],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:lockheed_martin",
+    "entity_type": "company",
+    "canonical_name": "Lockheed Martin",
+    "tickers": [
+      "LMT"
+    ],
+    "synonyms": [
+      "Lockheed Martin"
+    ],
+    "primary_category": "defense",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:rtx",
+    "entity_type": "company",
+    "canonical_name": "RTX",
+    "tickers": [
+      "RTX"
+    ],
+    "synonyms": [
+      "RTX"
+    ],
+    "primary_category": "defense",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:northrop_grumman",
+    "entity_type": "company",
+    "canonical_name": "Northrop Grumman",
+    "tickers": [
+      "NOC"
+    ],
+    "synonyms": [
+      "Northrop Grumman"
+    ],
+    "primary_category": "defense",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  },
+  {
+    "entity_id": "company:general_dynamics",
+    "entity_type": "company",
+    "canonical_name": "General Dynamics",
+    "tickers": [
+      "GD"
+    ],
+    "synonyms": [
+      "General Dynamics"
+    ],
+    "primary_category": "defense",
+    "theme_labels": [],
+    "hq_city": null,
+    "hq_country": null,
+    "region": null,
+    "ceo_name": null,
+    "ceo_as_of": null,
+    "data_quality": {
+      "confidence": 60,
+      "missing_fields": [
+        "hq_city",
+        "hq_country",
+        "region",
+        "ceo_name",
+        "ceo_as_of"
+      ],
+      "notes": [
+        "requires_verification"
+      ]
+    }
+  }
+]

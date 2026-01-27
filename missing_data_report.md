@@ -1,0 +1,80 @@
+# Missing Data Report
+
+Missing fields tracked: hq_city, hq_country, region, ceo_name, ceo_as_of.
+
+- Coinbase: hq_city,hq_country,region,ceo_name,ceo_as_of
+- PayPal: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Grayscale Bitcoin Trust: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Strategy: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Block: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Iris Energy: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Bitmine: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Galaxy Digital: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Cipher Mining: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Riot Platforms: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Hut 8: hq_city,hq_country,region,ceo_name,ceo_as_of
+- TeraWulf: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Core Scientific: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Metaplanet: hq_city,hq_country,region,ceo_name,ceo_as_of
+- MARA Holdings: hq_city,hq_country,region,ceo_name,ceo_as_of
+- CleanSpark: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Bitdeer: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Bitfarms: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Phoenix Group: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Grayscale Investments: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Saudi Aramco: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Exxon Mobil: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Chevron: hq_city,hq_country,region,ceo_name,ceo_as_of
+- PetroChina: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Shell: hq_city,hq_country,region,ceo_name,ceo_as_of
+- GE Vernova: hq_city,hq_country,region,ceo_name,ceo_as_of
+- NextEra Energy: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Iberdrola: hq_city,hq_country,region,ceo_name,ceo_as_of
+- TotalEnergies: hq_city,hq_country,region,ceo_name,ceo_as_of
+- CNOOC: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Siemens Energy: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Constellation Energy: hq_city,hq_country,region,ceo_name,ceo_as_of
+- ConocoPhillips: hq_city,hq_country,region,ceo_name,ceo_as_of
+- China Shenhua: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Enel: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Sinopec: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Enbridge: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Southern Company: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Duke Energy: hq_city,hq_country,region,ceo_name,ceo_as_of
+- BP: hq_city,hq_country,region,ceo_name,ceo_as_of
+- NVIDIA: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Alphabet: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Apple: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Microsoft: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Amazon: hq_city,hq_country,region,ceo_name,ceo_as_of
+- TSMC: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Broadcom: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Meta: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Tesla: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Tencent: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Samsung Electronics: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Oracle: hq_city,hq_country,region,ceo_name,ceo_as_of
+- ASML: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Palantir: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Alibaba: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Micron: hq_city,hq_country,region,ceo_name,ceo_as_of
+- AMD: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Netflix: hq_city,hq_country,region,ceo_name,ceo_as_of
+- SK Hynix: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Cisco: hq_city,hq_country,region,ceo_name,ceo_as_of
+- JPMorgan Chase: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Bank of America: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Wells Fargo: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Citigroup: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Goldman Sachs: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Morgan Stanley: hq_city,hq_country,region,ceo_name,ceo_as_of
+- BlackRock: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Equinor: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Petrobras: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Meta Platforms: hq_city,hq_country,region,ceo_name,ceo_as_of
+- ASML Holding: hq_city,hq_country,region,ceo_name,ceo_as_of
+- SAP: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Lockheed Martin: hq_city,hq_country,region,ceo_name,ceo_as_of
+- RTX: hq_city,hq_country,region,ceo_name,ceo_as_of
+- Northrop Grumman: hq_city,hq_country,region,ceo_name,ceo_as_of
+- General Dynamics: hq_city,hq_country,region,ceo_name,ceo_as_of

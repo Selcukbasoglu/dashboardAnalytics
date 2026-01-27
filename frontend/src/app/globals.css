@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light dark;
+  --bg: #f6f1ea;
+  --ink: #131414;
+  --panel: rgba(255, 255, 255, 0.82);
+  --panel-strong: #ffffff;
+  --accent: #1f5b4a;
+  --accent-2: #e67e22;
+  --muted: #5b6570;
+  --line: rgba(12, 24, 26, 0.12);
+}
+
+.dark {
+  color-scheme: dark;
+  --bg: #0a0b0d;
+  --ink: #f2f4f7;
+  --panel: rgba(15, 16, 18, 0.88);
+  --panel-strong: #0f1113;
+  --accent: #22c55e;
+  --accent-2: #d97706;
+  --muted: #9aa3ad;
+  --line: rgba(255, 255, 255, 0.12);
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --font-sans: var(--font-body);
+}
+
+body {
+  background: radial-gradient(circle at 10% 10%, rgba(31, 91, 74, 0.08), transparent 45%),
+    radial-gradient(circle at 90% 20%, rgba(230, 126, 34, 0.08), transparent 40%),
+    linear-gradient(180deg, #fdfbf7 0%, #f2ece4 100%);
+  color: var(--ink);
+  font-family: var(--font-body), "IBM Plex Sans", "Segoe UI", sans-serif;
+  min-height: 100vh;
+}
+
+.dark body {
+  background: radial-gradient(circle at 10% 10%, rgba(34, 197, 94, 0.12), transparent 45%),
+    radial-gradient(circle at 90% 20%, rgba(217, 119, 6, 0.12), transparent 40%),
+    linear-gradient(180deg, #0a0b0d 0%, #0f1113 100%);
+  color: var(--ink);
+}
+
+.dark .text-black {
+  color: var(--ink) !important;
+}
+
+.dark .text-black\/80 {
+  color: rgba(242, 244, 247, 0.8) !important;
+}
+
+.dark .text-black\/70 {
+  color: rgba(242, 244, 247, 0.7) !important;
+}
+
+.dark .text-black\/60 {
+  color: rgba(242, 244, 247, 0.6) !important;
+}
+
+.dark .text-black\/50 {
+  color: rgba(242, 244, 247, 0.5) !important;
+}
+
+.dark .text-black\/40 {
+  color: rgba(242, 244, 247, 0.4) !important;
+}
+
+.dark .text-black\/35 {
+  color: rgba(242, 244, 247, 0.35) !important;
+}
+
+.dark .text-black\/30 {
+  color: rgba(242, 244, 247, 0.3) !important;
+}
+
+.dark .border-black\/20 {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.dark .border-black\/10 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark .border-black\/5 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display), "Space Grotesk", "Trebuchet MS", sans-serif;
+}
+
+@keyframes mq-marquee {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.mq-marquee {
+  animation: mq-marquee var(--mq-speed, 70s) linear infinite;
+}
+
+.mq-pause:hover .mq-marquee {
+  animation-play-state: paused;
+}

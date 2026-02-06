@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timezone
 
 from app.config import Settings
-from app.engine.news_engine import final_rank_score
+from app.engine.news_engine import final_rank_score, normalize_rank_weights
 from app.infra.db import init_db
 from app.models import NewsItem
 from app.services.event_store import store_events
@@ -26,6 +26,9 @@ def _settings() -> Settings:
         impact_half_life_hours=12.0,
         weights={"market": 0.6, "news": 0.4},
         news_rank_weights={"relevance": 0.45, "quality": 0.30, "impact": 0.15, "scope": 0.10},
+        news_rank_profiles={},
+        news_rank_profile=None,
+        news_rank_profile_auto=True,
         thresholds={"flip_hysteresis": 0.12, "neutral_band_pct": 0.0015, "min_confidence": 0.35},
         min_hold_minutes={"15m": 20, "1h": 75, "3h": 200, "6h": 340},
         source_tiers={"primary": ["example.com"], "tier1": [], "tier2": [], "social": []},
@@ -87,6 +90,13 @@ class ScoreScalingTests(unittest.TestCase):
         impact = float(row["impact_score"] or 0.0)
         self.assertGreaterEqual(impact, 1.0)
         self.assertLessEqual(impact, 100.0)
+
+    def test_rank_weights_are_normalized(self):
+        out = normalize_rank_weights({"relevance": 3.0, "quality": 1.0, "impact": 0.0, "scope": -5.0})
+        self.assertAlmostEqual(sum(out.values()), 1.0, places=6)
+        self.assertGreaterEqual(out["relevance"], 0.0)
+        self.assertGreaterEqual(out["quality"], 0.0)
+        self.assertEqual(out["scope"], 0.0)
 
 
 if __name__ == "__main__":

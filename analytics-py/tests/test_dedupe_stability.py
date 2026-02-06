@@ -37,6 +37,34 @@ class DedupeStabilityTests(unittest.TestCase):
         rep = select_representative(items, meta)
         self.assertEqual(rep.title, "B")
 
+    def test_entity_group_cluster_id_is_stable_per_group(self):
+        now = datetime.now(timezone.utc)
+        items = [
+            NewsItem(title="Alpha headline", url="https://ex.com/a", source="a.com", quality_score=80, relevance_score=70, publishedAtISO=_iso(now)),
+            NewsItem(title="Beta headline", url="https://ex.com/b", source="b.com", quality_score=80, relevance_score=70, publishedAtISO=_iso(now)),
+        ]
+        meta = {
+            id(items[0]): {
+                "canonical": "alpha headline",
+                "bucket": "202501010000",
+                "top_entities": ["ALPHA"],
+                "published": now,
+                "canonical_url": "",
+            },
+            id(items[1]): {
+                "canonical": "beta headline",
+                "bucket": "202501010000",
+                "top_entities": ["BETA"],
+                "published": now,
+                "canonical_url": "",
+            },
+        }
+        deduped = dedup_clusters(items, meta)
+        self.assertEqual(len(deduped), 2)
+        ids = {it.title: it.dedup_cluster_id for it in deduped}
+        self.assertEqual(ids["Alpha headline"], build_cluster_id("alpha headline::ALPHA"))
+        self.assertEqual(ids["Beta headline"], build_cluster_id("beta headline::BETA"))
+
 
 if __name__ == "__main__":
     unittest.main()

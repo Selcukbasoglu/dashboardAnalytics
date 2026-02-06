@@ -295,11 +295,12 @@ def _aggregate_news_signal(
         else:
             dir_sign = 0 if cluster.direction == 0 else (1 if cluster.direction > 0 else -1)
         neutral = dir_sign == 0
-        contrib = base * (neutral_weight if neutral else dir_sign)
+        strength = base * (neutral_weight if neutral else 1.0)
+        contrib = 0.0 if neutral else base * dir_sign
         total += contrib
         scored.append(
             (
-                abs(contrib),
+                abs(strength),
                 cluster,
                 contrib,
                 neutral,
@@ -307,6 +308,7 @@ def _aggregate_news_signal(
                     "cluster_id": cluster.cluster_id,
                     "headline": cluster.headline,
                     "contrib": contrib,
+                    "strength": strength,
                     "impact": impact_norm,
                     "credibility": credibility,
                     "relevance": relevance,

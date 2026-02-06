@@ -45,7 +45,7 @@ from app.engine.sector_config import (
 )
 from app.llm.openai_client import summarize_article_openai, summary_enabled
 from app.providers.gdelt import search_gdelt, search_gdelt_context
-from app.providers.rss import PRESS_RELEASE_FEEDS, TR_NEWS_FEEDS, search_rss
+from app.providers.rss import PRESS_RELEASE_FEEDS, TR_NEWS_FEEDS, search_rss, search_rss_local
 from app.providers.finnhub_news import fetch_finnhub_company_news
 from app.engine.labels import (
     PERSONAL_GROUPS,
@@ -76,7 +76,7 @@ TOP_K_NEWS = 30
 TIME_BUCKET_MINUTES = 15
 TIMESPAN_FALLBACK = ["1h", "6h", "24h"]
 DOMAIN_SOFT_CAP = 5
-MAX_QUERIES_PER_SPAN = 2
+MAX_QUERIES_PER_SPAN = int(os.getenv("MAX_QUERIES_PER_SPAN", "4"))
 NEWS_TIME_BUDGET = 18.0
 PERSONAL_TOP_K = 10
 TOP_K_TOTAL_EVENTS = 40
@@ -106,6 +106,7 @@ NEWS_30D_MIN_AGE_DAYS = int(os.getenv("NEWS_30D_MIN_AGE_DAYS", "10"))
 NEWS_30D_MIN_AGE_COUNT = int(os.getenv("NEWS_30D_MIN_AGE_COUNT", "2"))
 NEWS_EXTRA_MAX_TICKERS = int(os.getenv("NEWS_EXTRA_MAX_TICKERS", "8"))
 NEWS_EXTRA_MAX_FEEDS = int(os.getenv("NEWS_EXTRA_MAX_FEEDS", "5"))
+RSS_FALLBACK_QUERY_SWEEP = int(os.getenv("RSS_FALLBACK_QUERY_SWEEP", "3"))
 
 NEWS_RECENCY_DECAY_LAMBDA = float(os.getenv("NEWS_RECENCY_DECAY_LAMBDA", "0.045"))
 NEWS_RECENCY_DECAY_FLOOR = float(os.getenv("NEWS_RECENCY_DECAY_FLOOR", "0.35"))
@@ -118,6 +119,76 @@ TIER_AS_DECAY_ENABLED = os.getenv("NEWS_TIER_AS_DECAY_ENABLED", "true").lower() 
 TIER_DECAY_MODIFIERS = {"A": 0.7, "B": 0.85, "C": 1.0}
 
 PRESS_DOMAINS = {"prnewswire.com", "businesswire.com", "globenewswire.com"}
+BIST_BOOST_TERMS = [
+    "bist",
+    "borsa istanbul",
+    "bist 100",
+    "bist100",
+    "kapanis",
+    "kapanış",
+    "bilanco",
+    "bilanço",
+    "kap",
+    "temett",
+    "temettu",
+    "bedelli",
+    "bedelsiz",
+    "tupas",
+    "tüpraş",
+    "socm",
+    "sokm",
+    "sok market",
+    "enjsa",
+    "astor",
+]
+
+_BIST_ALIAS_CACHE: list[str] | None = None
+
+
+def _load_bist_alias_terms() -> list[str]:
+    global _BIST_ALIAS_CACHE
+    if _BIST_ALIAS_CACHE is not None:
+        return _BIST_ALIAS_CACHE
+    try:
+        base_dir = Path(__file__).resolve().parents[3]
+        alias_path = base_dir / "frontend" / "src" / "lib" / "portfolio_aliases.json"
+        if not alias_path.exists():
+            _BIST_ALIAS_CACHE = []
+            return _BIST_ALIAS_CACHE
+        data = yaml.safe_load(alias_path.read_text())
+        symbols = (data or {}).get("symbols") or {}
+        terms: list[str] = []
+        for sym, info in symbols.items():
+            if (info or {}).get("asset_class") != "BIST":
+                continue
+            aliases = (info or {}).get("aliases") or []
+            for a in aliases[:6]:
+                if not isinstance(a, str):
+                    continue
+                if " " in a:
+                    continue
+                if len(a) < 4:
+                    continue
+                terms.append(a)
+        _BIST_ALIAS_CACHE = terms
+        return _BIST_ALIAS_CACHE
+    except Exception:
+        _BIST_ALIAS_CACHE = []
+        return _BIST_ALIAS_CACHE
+
+
+def _local_news_domains() -> set[str]:
+    raw = os.getenv("LOCAL_NEWS_DOMAINS", "")
+    if not raw:
+        return set()
+    parts = [p.strip().lower() for p in raw.split(",")]
+    return {p for p in parts if p}
+
+
+def _is_local_domain(domain: str, local_domains: set[str]) -> bool:
+    if not domain or not local_domains:
+        return False
+    return domain.lower() in local_domains
 TR_DOMAINS = {"kap.org.tr"}
 
 TAG_RULES = [
@@ -545,6 +616,46 @@ def safe_query_with_filters(text: str) -> str:
     return cleaned[:360]
 
 
+def select_queries(queries: List[str], limit: int = MAX_QUERIES_PER_SPAN) -> List[str]:
+    if limit <= 0:
+        return []
+    cleaned: List[str] = []
+    seen: set[str] = set()
+    for q in queries:
+        token = (q or "").strip()
+        if not token:
+            continue
+        key = token.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(token)
+    if len(cleaned) <= limit:
+        return cleaned
+    selected = [cleaned[0]]
+    if limit == 1:
+        return selected
+    rest = cleaned[1:]
+    slots = limit - 1
+    if len(rest) <= slots:
+        selected.extend(rest)
+        return selected
+    for i in range(slots):
+        if slots == 1:
+            idx = 0
+        else:
+            idx = round(i * (len(rest) - 1) / (slots - 1))
+        candidate = rest[idx]
+        if candidate not in selected:
+            selected.append(candidate)
+    for candidate in rest:
+        if len(selected) >= limit:
+            break
+        if candidate not in selected:
+            selected.append(candidate)
+    return selected[:limit]
+
+
 def _count_hits(text: str, keywords: List[str]) -> int:
     hits = 0
     for kw in keywords:
@@ -648,13 +759,26 @@ def allow_backstop_domain(domain: str) -> bool:
 
 def normalize_rank_weights(weights: dict | None) -> dict:
     if not weights:
-        return DEFAULT_NEWS_RANK_WEIGHTS
-    return {
-        "relevance": float(weights.get("relevance", DEFAULT_NEWS_RANK_WEIGHTS["relevance"])),
-        "quality": float(weights.get("quality", DEFAULT_NEWS_RANK_WEIGHTS["quality"])),
-        "impact": float(weights.get("impact", DEFAULT_NEWS_RANK_WEIGHTS["impact"])),
-        "scope": float(weights.get("scope", DEFAULT_NEWS_RANK_WEIGHTS["scope"])),
+        return dict(DEFAULT_NEWS_RANK_WEIGHTS)
+
+    def _coerce(name: str) -> float:
+        default = DEFAULT_NEWS_RANK_WEIGHTS[name]
+        try:
+            value = float(weights.get(name, default))
+        except Exception:
+            value = default
+        return max(0.0, value)
+
+    raw = {
+        "relevance": _coerce("relevance"),
+        "quality": _coerce("quality"),
+        "impact": _coerce("impact"),
+        "scope": _coerce("scope"),
     }
+    total = sum(raw.values())
+    if total <= 0:
+        return dict(DEFAULT_NEWS_RANK_WEIGHTS)
+    return {name: value / total for name, value in raw.items()}
 
 
 def final_rank_score(item: NewsItem, weights: dict | None = None) -> float:
@@ -913,9 +1037,9 @@ def tokenize_title(title: str) -> List[str]:
 def has_strong_symbol_context(title: str, symbol: str, is_crypto: bool) -> bool:
     if not symbol:
         return False
-    if re.search(rf"\\({re.escape(symbol)}\\)", title):
+    if re.search(rf"\({re.escape(symbol)}\)", title):
         return True
-    if re.search(rf"\\${re.escape(symbol)}\\b", title):
+    if re.search(rf"\${re.escape(symbol)}\b", title):
         return True
     tokens = tokenize_title(title)
     lower_tokens = [t.lower() for t in tokens]
@@ -951,7 +1075,7 @@ def is_name_distinct(name: str, ticker: str | None) -> bool:
 
 
 def ambiguous_ticker_allowed(ticker: str, title_lower: str) -> bool:
-    if ticker == "COP" and re.search(r"cop2\\d", title_lower):
+    if ticker == "COP" and re.search(r"cop2\d", title_lower):
         return False
     if ticker == "BP":
         return any(k in title_lower for k in ["plc", "oil", "energy major", "london shares", "bp plc"])
@@ -1569,7 +1693,7 @@ def collect_news(
     provider_counts = {"gdelt": 0, "rss_google": 0, "press": 0, "tr": 0, "finnhub": 0}
     rss_blocklist_hits = 0
 
-    selected = [safe_query(q) for q in queries if q][:MAX_QUERIES_PER_SPAN]
+    selected = select_queries([safe_query(q) for q in queries if q], MAX_QUERIES_PER_SPAN)
     if not selected:
         selected = [safe_query("bitcoin crypto ethereum")]
     notes.append(f"query_count:{len(selected)}")
@@ -1611,7 +1735,10 @@ def collect_news(
 
     if allow_extras and len(items) < min_required:
         extra_feeds = (PRESS_RELEASE_FEEDS + TR_NEWS_FEEDS)[:NEWS_EXTRA_MAX_FEEDS]
-        rss_raw = search_rss(selected[0], maxrecords, timespan=timespan, extra_feeds=extra_feeds)
+        rss_raw: List[dict] = []
+        sweep = max(1, min(len(selected), RSS_FALLBACK_QUERY_SWEEP))
+        for q in selected[:sweep]:
+            rss_raw.extend(search_rss(q, maxrecords, timespan=timespan, extra_feeds=extra_feeds))
         if rss_raw:
             for raw in rss_raw:
                 url = (raw.get("url") or "").strip()
@@ -1634,6 +1761,37 @@ def collect_news(
             sources_used.append("rss")
             provider_used = "rss"
 
+    # Local/BIST-focused RSS sweep using watchlist symbols
+    if allow_extras and watchlist:
+        local_max_feeds = int(os.getenv("LOCAL_RSS_MAX_FEEDS", "4") or 4)
+        local_max_terms = int(os.getenv("LOCAL_RSS_MAX_TERMS", "4") or 4)
+        local_extra_feeds = TR_NEWS_FEEDS[:local_max_feeds]
+        local_terms = []
+        for sym in watchlist[: min(len(watchlist), 4)]:
+            local_terms.append(sym)
+        local_terms.extend(_load_bist_alias_terms()[:6])
+        for term in local_terms[:local_max_terms]:
+            q = f"{term} BIST"
+            rss_raw = search_rss_local(
+                q,
+                max_items=min(8, maxrecords),
+                extra_feeds=local_extra_feeds,
+                strict=True,
+                timespan=timespan,
+                timeout=min(6.0, timeout),
+            )
+            rss_items = normalize_rss(rss_raw)
+            if rss_items:
+                for it in rss_items:
+                    domain = extract_domain(it.url or "")
+                    if domain in TR_DOMAINS:
+                        provider_counts["tr"] += 1
+                    else:
+                        provider_counts["rss_google"] += 1
+                notes.append("rss_local_bist")
+                items.extend(rss_items)
+                sources_used.append("rss")
+
     if sources_used:
         provider_used = "+".join(sorted(set(sources_used)))
     notes.append(f"provider_used:{provider_used}")
@@ -1642,7 +1800,7 @@ def collect_news(
 
 
 def collect_news_extras(
-    query: str,
+    queries: List[str],
     timespan: str,
     maxrecords: int,
     timeout: float,
@@ -1670,9 +1828,15 @@ def collect_news_extras(
                 statuses["finnhub"] = "error"
             notes.append(f"finnhub_news_error:{fh.error_msg}")
 
+    selected = select_queries([safe_query(q) for q in queries if q], max(1, min(MAX_QUERIES_PER_SPAN, RSS_FALLBACK_QUERY_SWEEP)))
+    if not selected:
+        selected = [safe_query("bitcoin crypto ethereum")]
+
     extra_feeds = (PRESS_RELEASE_FEEDS + TR_NEWS_FEEDS)[:NEWS_EXTRA_MAX_FEEDS]
     if extra_feeds:
-        rss_raw = search_rss(query, maxrecords, timespan=timespan, extra_feeds=extra_feeds)
+        rss_raw: List[dict] = []
+        for q in selected:
+            rss_raw.extend(search_rss(q, maxrecords, timespan=timespan, extra_feeds=extra_feeds))
         if rss_raw:
             for raw in rss_raw:
                 url = (raw.get("url") or "").strip()
@@ -1698,7 +1862,110 @@ def collect_news_extras(
                 statuses["tr"] = "ok"
             else:
                 statuses["tr"] = "missing_feeds"
+    # Local/BIST-focused RSS sweep using watchlist symbols
+    if watchlist:
+        local_max_feeds = int(os.getenv("LOCAL_RSS_MAX_FEEDS", "4") or 4)
+        local_max_terms = int(os.getenv("LOCAL_RSS_MAX_TERMS", "4") or 4)
+        local_extra_feeds = TR_NEWS_FEEDS[:local_max_feeds]
+        local_terms = []
+        for sym in watchlist[: min(len(watchlist), 4)]:
+            local_terms.append(sym)
+        local_terms.extend(_load_bist_alias_terms()[:6])
+        for term in local_terms[:local_max_terms]:
+            q = f"{term} BIST"
+            rss_raw = search_rss_local(
+                q,
+                max_items=min(8, maxrecords),
+                extra_feeds=local_extra_feeds,
+                strict=True,
+                timespan=timespan,
+                timeout=min(6.0, timeout),
+            )
+            rss_items = normalize_rss(rss_raw)
+            if rss_items:
+                for it in rss_items:
+                    domain = extract_domain(it.url or "")
+                    if domain in TR_DOMAINS:
+                        provider_counts["tr"] += 1
+                    else:
+                        provider_counts["rss_google"] += 1
+                items.extend(rss_items)
+                statuses["tr"] = "ok"
     return items, notes, provider_counts, rss_blocklist_hits, statuses
+
+
+def collect_local_news(
+    watchlist: List[str],
+    timespan: str,
+    maxrecords: int,
+    timeout: float,
+) -> Tuple[List[NewsItem], List[str], dict]:
+    notes: List[str] = []
+    items: List[NewsItem] = []
+    provider_counts = {"tr": 0}
+    if not watchlist and not TR_NEWS_FEEDS:
+        return items, ["local_news_empty"], provider_counts
+
+    local_max_feeds = int(os.getenv("LOCAL_RSS_MAX_FEEDS", "4") or 4)
+    local_max_terms = int(os.getenv("LOCAL_RSS_MAX_TERMS", "4") or 4)
+    local_extra_feeds = TR_NEWS_FEEDS[:local_max_feeds]
+
+    # Base local sweep without query filtering (headline-only)
+    base_raw = search_rss_local(
+        "",
+        max_items=maxrecords,
+        extra_feeds=local_extra_feeds,
+        strict=False,
+        timespan=timespan,
+        timeout=min(6.0, timeout),
+    )
+    base_items = normalize_rss(base_raw)
+    if base_items:
+        items.extend(base_items)
+        notes.append("rss_local_base")
+
+    if len(items) >= maxrecords:
+        items = items[:maxrecords]
+        if items:
+            items = dedup_global(items)
+        for it in items:
+            domain = extract_domain(it.url or "")
+            if domain in TR_DOMAINS:
+                provider_counts["tr"] += 1
+        return items, notes, provider_counts
+
+    local_terms: list[str] = []
+    for sym in watchlist[: min(len(watchlist), 4)]:
+        local_terms.append(sym)
+    local_terms.extend(_load_bist_alias_terms()[:6])
+    local_terms.extend(["BIST", "Borsa Istanbul"])
+
+    max_per_term = min(8, maxrecords)
+    for term in local_terms[:local_max_terms]:
+        q = f"{term} BIST" if term not in ("BIST", "Borsa Istanbul") else term
+        strict = term not in ("BIST", "Borsa Istanbul")
+        rss_raw = search_rss_local(
+            q,
+            max_items=max_per_term,
+            extra_feeds=local_extra_feeds,
+            strict=strict,
+            timespan=timespan,
+            timeout=min(6.0, timeout),
+        )
+        rss_items = normalize_rss(rss_raw)
+        if not rss_items:
+            continue
+        items.extend(rss_items)
+        notes.append("rss_local_term")
+
+    if items:
+        items = dedup_global(items)
+        for it in items:
+            domain = extract_domain(it.url or "")
+            if domain in TR_DOMAINS:
+                provider_counts["tr"] += 1
+
+    return items, notes, provider_counts
 
 
 def collect_personal_news(
@@ -1710,7 +1977,7 @@ def collect_personal_news(
 ) -> Tuple[List[NewsItem], List[str]]:
     notes: List[str] = []
     items: List[NewsItem] = []
-    selected = [safe_query(q) for q in queries if q][:MAX_QUERIES_PER_SPAN]
+    selected = select_queries([safe_query(q) for q in queries if q], MAX_QUERIES_PER_SPAN)
     if not selected:
         return [], ["personal_query_empty"]
 
@@ -1735,15 +2002,28 @@ def collect_personal_news(
     provider_used = "gdelt" if items else "none"
     if (not items) and PERSONAL_RSS_FALLBACK:
         rss_items: List[NewsItem] = []
-        rss_raw = search_rss(selected[0], maxrecords, timespan=timespan)
-        if rss_raw:
-            rss_items.extend(normalize_rss(rss_raw))
+        sweep = max(1, min(len(selected), RSS_FALLBACK_QUERY_SWEEP))
+        for q in selected[:sweep]:
+            rss_raw = search_rss(q, maxrecords, timespan=timespan)
+            if rss_raw:
+                rss_items.extend(normalize_rss(rss_raw))
         if rss_items:
             items.extend(rss_items)
             provider_used = "rss"
             notes.append("personal_rss_fallback")
             if not allow_t3:
                 items = [it for it in items if extract_domain(it.url) in TIER_A or extract_domain(it.url) in TIER_B]
+
+    # Extra TR/BIST topical sweep to pull more local coverage
+    extra_rss_items: List[NewsItem] = []
+    for q in BIST_BOOST_TERMS[:6]:
+        raw = search_rss(q, max_items=min(25, maxrecords), timespan=timespan)
+        if raw:
+            extra_rss_items.extend(normalize_rss(raw))
+    if extra_rss_items:
+        items.extend(extra_rss_items)
+        provider_used = provider_used if provider_used != "none" else "rss"
+        notes.append("personal_rss_local_boost")
 
     for it in items:
         tags = ["PERSONAL", "PERSONAL_FEED"]
@@ -1937,6 +2217,7 @@ def select_representative(items: List[NewsItem], meta: Dict[int, dict]) -> NewsI
 
 def dedup_clusters(items: List[NewsItem], meta: Dict[int, dict]) -> List[NewsItem]:
     items = unique_by_url(items)
+    local_domains = _local_news_domains()
     grouped: Dict[Tuple[str, str | Tuple[str, ...]], List[NewsItem]] = {}
     for item in items:
         info = meta.get(id(item), {})
@@ -1983,9 +2264,20 @@ def dedup_clusters(items: List[NewsItem], meta: Dict[int, dict]) -> List[NewsIte
             if canonical_url:
                 dedup_key = f"url::{canonical_url}"
             else:
-                dedup_key = f"{meta[id(rep)]['canonical']}::{','.join(top_entities)}"
+                entity_key = group_key if isinstance(group_key, tuple) else tuple(meta.get(id(rep), {}).get("top_entities", []))
+                dedup_key = f"{meta[id(rep)]['canonical']}::{','.join(entity_key)}"
             rep.dedup_cluster_id = build_cluster_id(dedup_key)
             rep.other_sources = other_sources
+            if local_domains:
+                domains = {rep.source or ""}
+                domains.update(other_sources or [])
+                domains = {d for d in domains if d}
+                has_local = any(_is_local_domain(d, local_domains) for d in domains)
+                has_global = any(not _is_local_domain(d, local_domains) for d in domains)
+                if has_local and has_global:
+                    rep.tags = list(rep.tags or [])
+                    if "LOCAL_GLOBAL_MATCH" not in rep.tags:
+                        rep.tags.append("LOCAL_GLOBAL_MATCH")
             output.append(rep)
 
     return output
@@ -2241,9 +2533,8 @@ def fetch_news(
                 gating_reason = "thin_quality"
             notes.append(f"news_gating_reason={gating_reason}")
             if gating_reason != "none":
-                primary_query = safe_query(queries[0] if queries else "bitcoin crypto ethereum")
                 extra_items, extra_notes, extra_counts, extra_block_hits, statuses = collect_news_extras(
-                    primary_query,
+                    queries,
                     span,
                     maxrecords,
                     timeout,
@@ -2782,7 +3073,7 @@ def collect_events_doc(
     items: List[NewsItem] = []
     health_penalty = 0.0
     sanitizer = safe_query_with_filters if allow_filters else safe_query
-    selected = [sanitizer(q) for q in queries if q][:MAX_QUERIES_PER_SPAN]
+    selected = select_queries([sanitizer(q) for q in queries if q], MAX_QUERIES_PER_SPAN)
     if not selected:
         return [], ["event_query_empty"], 0.2
 

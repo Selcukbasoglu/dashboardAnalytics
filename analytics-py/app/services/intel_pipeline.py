@@ -125,6 +125,20 @@ def _select_news_rank_weights(settings: Settings, yahoo: dict) -> dict:
     return normalize_rank_weights(settings.news_rank_weights)
 
 
+def _build_base_news_query(yahoo: dict, watchlist: list[str]) -> str:
+    regime = _detect_news_regime(yahoo)
+    macro = "global macro rates inflation cpi pce fed ecb bond yields dxy"
+    if regime == "high_volatility":
+        regime_terms = "volatility risk-off liquidity stress safe haven"
+    elif regime == "risk_off":
+        regime_terms = "risk-off defensives drawdown uncertainty"
+    else:
+        regime_terms = "risk-on growth earnings demand"
+    themes = "energy oil opec lng sanctions geopolitics ai semiconductor export controls"
+    watch = " ".join((watchlist or [])[:10])
+    return f"{macro} {regime_terms} {themes} {watch}".strip()
+
+
 def _should_fetch_bars(db: DB, asset: str, min_minutes: int) -> bool:
     last = get_kv(db, f"bars:last_fetch:{asset}")
     if not last:
@@ -299,9 +313,7 @@ class IntelPipelineService:
         )
 
         watchlist = req.watchlist or []
-        news_query = "bitcoin crypto ethereum"
-        if watchlist:
-            news_query = f"{news_query} {' '.join(watchlist)}"
+        news_query = _build_base_news_query(yahoo, watchlist)
 
         rank_weights = _select_news_rank_weights(self.settings, yahoo)
         wl_key = ",".join(watchlist)

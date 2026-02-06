@@ -1194,6 +1194,16 @@ export default function Dashboard() {
   const insights = buildRuleInsights(market, intel?.top_news ?? [], flow, risk, intel?.debug?.notes ?? []);
   const totalMcapUsd = market?.coingecko?.total_mcap_usd ?? null;
   const holdingsList = portfolio?.holdings ?? [];
+  const portfolioSummaryLines = useMemo(() => {
+    const raw = portfolio?.portfolioSummary?.summary ?? "";
+    return raw
+      .split("\n")
+      .map((line) => line.replace(/^[-*•\s]+/, "").trim())
+      .filter(Boolean);
+  }, [portfolio?.portfolioSummary?.summary]);
+  const geminiNewsTitlesSent = portfolio?.portfolioSummary?.meta?.news_titles_sent ?? null;
+  const geminiLocalTitlesSent = portfolio?.portfolioSummary?.meta?.local_titles_sent ?? null;
+  const geminiTotalTitlesSent = portfolio?.portfolioSummary?.meta?.news_titles_sent_total ?? null;
   const fxLive = useMemo(() => {
     const live = liveQuotes?.["USDTRY=X"]?.price;
     return Number.isFinite(live) && (live ?? 0) > 0 ? (live as number) : (portfolio?.fx?.USDTRY ?? 0);
@@ -2618,6 +2628,27 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="space-y-2 text-xs">
+                  {portfolioSummaryLines.length ? (
+                    <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2">
+                      <div className="text-[11px] uppercase tracking-wide text-black/40">Gemini Ozeti</div>
+                      <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-black/60">
+                        {portfolioSummaryLines.slice(0, 6).map((line, idx) => (
+                          <li key={`gemini-summary-${idx}`}>{line}</li>
+                        ))}
+                      </ul>
+                      <div className="mt-2 text-[11px] text-black/45">
+                        Geminiye giden baslik sayisi (top/local/toplam):{" "}
+                        {typeof geminiNewsTitlesSent === "number" ? geminiNewsTitlesSent : "—"}/
+                        {typeof geminiLocalTitlesSent === "number" ? geminiLocalTitlesSent : "—"}/
+                        {typeof geminiTotalTitlesSent === "number" ? geminiTotalTitlesSent : "—"}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-black/45">
+                      Gemini ozeti yok
+                      {portfolio?.portfolioSummary?.error ? `: ${portfolio.portfolioSummary.error}` : "."}
+                    </div>
+                  )}
                   <div className="text-[11px] text-black/50">Yatirim tavsiyesi degildir.</div>
                   {(portfolio?.recommendations ?? [])
                     .filter((r) => r.period === portfolioPeriod)

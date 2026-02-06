@@ -479,6 +479,19 @@ export type PortfolioResponse = {
     };
     coverage: { total: number; matched: number };
   };
+  portfolioSummary?: {
+    provider?: string;
+    summary?: string | null;
+    data_status?: "ok" | "partial";
+    error?: string;
+    meta?: {
+      period?: "daily" | "weekly" | "monthly";
+      horizon?: "24h" | "7d" | "30d";
+      news_titles_sent?: number;
+      local_titles_sent?: number;
+      news_titles_sent_total?: number;
+    };
+  };
   recommendations: PortfolioRecommendation[];
   optimizer_inputs?: { mom_z_weighted?: number };
   debug_notes: string[];

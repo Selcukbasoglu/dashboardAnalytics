@@ -2376,10 +2376,10 @@ def build_news_summary(items: List[NewsItem], low_news: bool = False) -> List[st
             event_types[item.event_type] = event_types.get(item.event_type, 0) + 1
         for ch in item.impact_channel:
             channels[ch] = channels.get(ch, 0) + 1
-    top_category = max(categories.items(), key=lambda x: x[1])[0] if categories else "kripto"
-    top_event = max(event_types.items(), key=lambda x: x[1])[0] if event_types else "OTHER"
+    top_category = max(categories.items(), key=lambda x: x[1])[0] if categories else "belirsiz"
+    top_event = max(event_types.items(), key=lambda x: x[1])[0] if event_types else "belirsiz"
     top_channels = sorted(channels.items(), key=lambda x: x[1], reverse=True)[:2]
-    channel_list = ", ".join([c for c, _ in top_channels]) if top_channels else "büyüme"
+    channel_list = ", ".join([c for c, _ in top_channels]) if top_channels else "belirsiz"
     summary = [
         f"baskın kategori: {top_category}",
         f"baskın event_type: {top_event}",

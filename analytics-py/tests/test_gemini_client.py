@@ -1,0 +1,101 @@
+import json
+import os
+import unittest
+from unittest.mock import patch
+
+from app.llm import gemini_client
+
+
+class _FakeResponse:
+    def __init__(self, status_code: int, payload: dict | None = None, text: str = ""):
+        self.status_code = status_code
+        self._payload = payload or {}
+        self.text = text
+        self.content = b"{}"
+
+    def json(self):
+        return self._payload
+
+
+def _payload() -> dict:
+    return {
+        "asOfISO": "2026-02-06T12:00:00+03:00",
+        "baseCurrency": "TRY",
+        "newsHorizon": "24h",
+        "period": "daily",
+        "coverage": {"matched": 5, "total": 10},
+        "stats": {"coverage_ratio": 0.5},
+        "riskFlags": ["FX_RISK_UP"],
+        "topNews": [
+            {"title": "Fed keeps rates unchanged", "source": "reuters.com", "publishedAtISO": "2026-02-06T09:00:00Z"},
+            {"title": "Oil output cuts extended", "source": "ft.com", "publishedAtISO": "2026-02-06T08:00:00Z"},
+        ],
+        "localHeadlines": [
+            {"title": "BIST companies release earnings", "source": "kap.org.tr", "publishedAtISO": "2026-02-06T07:00:00Z"}
+        ],
+        "relatedNews": {
+            "ASTOR": [{"title": "Grid demand rises", "impactScore": 0.2, "direction": "positive"}],
+            "SOKM": [{"title": "Consumer demand softens", "impactScore": -0.1, "direction": "negative"}],
+        },
+        "holdings": [{"symbol": "ASTOR", "weight": 0.3, "asset_class": "BIST", "sector": "UTILITIES"}],
+        "holdings_full": [{"symbol": "ASTOR", "weight": 0.3, "asset_class": "BIST", "sector": "UTILITIES"}],
+        "recommendations": [],
+    }
+
+
+class GeminiClientTests(unittest.TestCase):
+    def test_prepare_payload_compacts_and_keeps_news(self):
+        payload = _payload()
+        payload["topNews"] = payload["topNews"] * 30
+        prepared = gemini_client._prepare_payload(payload, budget_chars=5000)
+        dumped = json.dumps(prepared, ensure_ascii=True)
+        self.assertLessEqual(len(dumped), 5000)
+        self.assertTrue(prepared["topNews"])
+        self.assertTrue(prepared["localHeadlines"])
+        self.assertLessEqual(len(prepared["topNews"]), gemini_client.TOP_NEWS_MAX)
+
+    def test_ensure_sections_adds_required_blocks(self):
+        prepared = gemini_client._prepare_payload(_payload(), budget_chars=5000)
+        text = gemini_client._ensure_sections("Kisa bir metin.", prepared)
+        self.assertIn("Haber Temelli Icgoruler", text)
+        self.assertIn("Model Fikirleri", text)
+
+    def test_generate_retries_after_rate_limit(self):
+        os.environ["GEMINI_API_KEY"] = "x"
+        ok_payload = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [{"text": "Haber Temelli Icgoruler\n- [KANIT:T1] not\n\nModel Fikirleri (Varsayim)\n- Model gorusu (ORTA): not"}]
+                    }
+                }
+            ]
+        }
+        with patch("app.llm.gemini_client.requests.post") as post, patch("app.llm.gemini_client.time.sleep"):
+            post.side_effect = [
+                _FakeResponse(429, text="rate limited"),
+                _FakeResponse(200, payload=ok_payload),
+            ]
+            with patch("app.llm.gemini_client._call_openrouter_fallback") as fallback:
+                summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
+                self.assertIsNotNone(summary)
+                self.assertIsNone(err)
+                self.assertEqual(post.call_count, 2)
+                fallback.assert_not_called()
+
+    def test_generate_uses_openrouter_after_final_rate_limit(self):
+        os.environ["GEMINI_API_KEY"] = "x"
+        with patch("app.llm.gemini_client.requests.post") as post, patch("app.llm.gemini_client.time.sleep"):
+            post.side_effect = [
+                _FakeResponse(429, text="rate limited"),
+                _FakeResponse(429, text="rate limited"),
+            ]
+            with patch("app.llm.gemini_client._call_openrouter_fallback", return_value=("Fallback text", None)):
+                summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
+                self.assertIsNotNone(summary)
+                self.assertEqual(err, "fallback_openrouter")
+                self.assertIn("Model Fikirleri", summary)
+
+
+if __name__ == "__main__":
+    unittest.main()

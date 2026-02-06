@@ -16,6 +16,7 @@ import numpy as np
 from app.models import IntelRequest, NewsItem
 from app.engine.news_engine import (
     annotate_items,
+    collect_local_news,
     dedup_clusters,
     dedup_global,
     fetch_news,
@@ -26,6 +27,7 @@ from app.engine.news_engine import (
 from app.providers.finnhub_news import fetch_finnhub_company_news
 from app.providers.rss import fetch_rss
 from app.infra.cache import cache_key
+from app.llm.gemini_client import generate_portfolio_summary
 from app.services.quote_router import get_quote_router
 from app.providers.yahoo import _fetch_chart
 
@@ -52,6 +54,8 @@ TR_MAP = str.maketrans(
 
 SHORT_TICKERS = {"HL", "SIL"}
 SHORT_TICKER_CONTEXT = {"stock", "shares", "nyse", "nasdaq", "etf", "inc", "corp", "company"}
+PRECIOUS_METAL_SYMBOLS = {"SIL", "SLV", "GLD", "IAU", "GOLD", "SILVER", "HL"}
+PRECIOUS_METAL_SECTORS = {"METALS_MINERS", "PRECIOUS_METALS"}
 
 
 DEFAULT_HOLDINGS = [
@@ -66,6 +70,28 @@ DEFAULT_HOLDINGS = [
     {"symbol": "BTC", "qty": 0.0254814},
     {"symbol": "NEAR", "qty": 116.946},
 ]
+
+APP_STATE_PORTFOLIO_SEEDED = "portfolio_holdings_seeded"
+
+
+def _truthy(value: str | None, default: bool = False) -> bool:
+    if value is None:
+        return default
+    return value.lower() in ("1", "true", "yes", "on")
+
+
+def _classify_holding(h: dict) -> dict:
+    symbol = (h.get("symbol") or "").upper()
+    sector = (h.get("sector") or "").upper()
+    asset_class = (h.get("asset_class") or "").upper()
+    is_precious = symbol in PRECIOUS_METAL_SYMBOLS or sector in PRECIOUS_METAL_SECTORS
+    is_crypto = asset_class == "CRYPTO" or sector == "CRYPTO"
+    return {
+        "asset_class": asset_class or "UNKNOWN",
+        "sector": sector or None,
+        "is_precious_metal": bool(is_precious),
+        "is_crypto": bool(is_crypto),
+    }
 
 
 @dataclass
@@ -123,11 +149,59 @@ def load_aliases() -> dict:
             pass
     return {"symbols": {}, "fx": {"USDTRY": "USDTRY=X"}}
 
+def _get_app_state(db, key: str) -> str | None:
+    row = db.fetchone("SELECT value FROM app_state WHERE key = ?", (key,))
+    if not row:
+        return None
+    return row.get("value")
 
-def _build_portfolio_watchlist(alias_map: dict) -> list[str]:
+
+def _set_app_state(db, key: str, value: str) -> None:
+    db.upsert("app_state", ["key", "value"], ["key"], [(key, value)])
+
+
+def load_portfolio_holdings(db, seed_defaults: bool = True) -> list[dict]:
+    rows = db.fetchall("SELECT symbol, qty FROM portfolio_holdings ORDER BY created_at ASC, symbol ASC")
+    if rows:
+        return [{"symbol": row["symbol"], "qty": float(row["qty"])} for row in rows]
+    if not seed_defaults:
+        return []
+    seeded = _get_app_state(db, APP_STATE_PORTFOLIO_SEEDED)
+    if seeded:
+        return []
+    now = datetime.now(timezone.utc).isoformat()
+    db.executemany(
+        "INSERT INTO portfolio_holdings (symbol, qty, created_at, updated_at) VALUES (?, ?, ?, ?)",
+        [(h["symbol"], float(h["qty"]), now, now) for h in DEFAULT_HOLDINGS],
+    )
+    _set_app_state(db, APP_STATE_PORTFOLIO_SEEDED, "1")
+    rows = db.fetchall("SELECT symbol, qty FROM portfolio_holdings ORDER BY created_at ASC, symbol ASC")
+    return [{"symbol": row["symbol"], "qty": float(row["qty"])} for row in rows]
+
+
+def upsert_portfolio_holding(db, symbol: str, qty: float) -> None:
+    now = datetime.now(timezone.utc).isoformat()
+    existing = db.fetchone("SELECT symbol FROM portfolio_holdings WHERE symbol = ?", (symbol,))
+    if existing:
+        db.execute(
+            "UPDATE portfolio_holdings SET qty = ?, updated_at = ? WHERE symbol = ?",
+            (qty, now, symbol),
+        )
+        return
+    db.execute(
+        "INSERT INTO portfolio_holdings (symbol, qty, created_at, updated_at) VALUES (?, ?, ?, ?)",
+        (symbol, qty, now, now),
+    )
+
+
+def remove_portfolio_holding(db, symbol: str) -> None:
+    db.execute("DELETE FROM portfolio_holdings WHERE symbol = ?", (symbol,))
+
+
+def _build_portfolio_watchlist(alias_map: dict, holdings: list[dict]) -> list[str]:
     terms: list[str] = []
     seen: set[str] = set()
-    for holding in DEFAULT_HOLDINGS:
+    for holding in holdings:
         symbol = holding.get("symbol")
         if not symbol:
             continue
@@ -326,6 +400,7 @@ def compute_news_impact(
     matches_summary = {"direct": 0, "entity": 0, "title": 0, "fuzzy": 0, "sector": 0, "guarded": 0}
     direct_methods = {"direct", "entity", "title", "fuzzy"}
     output = []
+    local_bist_boost = float(os.getenv("LOCAL_BIST_IMPACT_BOOST", "1.2") or 1.2)
     for item in items:
         matches, counts = match_news_item(item, alias_map)
         for k in matches_summary:
@@ -341,6 +416,8 @@ def compute_news_impact(
         w_base = (item.relevance_score or item.score or 0) / 100.0
         w_base *= (item.quality_score or 0) / 100.0
         w = w_base * recency_weight(item.publishedAtISO)
+        if item.tags and "LOCAL_GLOBAL_MATCH" in item.tags:
+            w *= 1.15
         low_signal = item.event_type == "OTHER" and not (item.impact_channel or [])
         if low_signal:
             w *= 0.25
@@ -352,12 +429,18 @@ def compute_news_impact(
         elif dir_score < -0.05:
             direction = "negative"
 
+        local_global = bool(item.tags and "LOCAL_GLOBAL_MATCH" in item.tags)
+
         impact_per_symbol = {}
         impact_per_symbol_direct = {}
         impact_per_symbol_indirect = {}
         for m in matches:
             impact_per_symbol.setdefault(m["symbol"], 0.0)
             impact = w * dir_score * m["score"]
+            if local_global:
+                sym_meta = (alias_map.get("symbols", {}) or {}).get(m["symbol"], {})
+                if (sym_meta.get("asset_class") or "").upper() == "BIST":
+                    impact *= local_bist_boost
             impact_per_symbol[m["symbol"]] += impact
             if m["method"] in direct_methods:
                 impact_per_symbol_direct.setdefault(m["symbol"], 0.0)
@@ -393,10 +476,74 @@ def compute_news_impact(
                 "impact_by_symbol_direct": impact_per_symbol_direct,
                 "impact_by_symbol_indirect": impact_per_symbol_indirect,
                 "evidence": evidence,
+                "local_global_match": local_global,
             }
         )
 
     return output, matches_summary
+
+
+def build_related_news(
+    news_items: list[dict],
+    holdings: list[dict],
+    per_symbol_limit: int = 4,
+) -> dict[str, list[dict]]:
+    symbols = [h.get("symbol") for h in holdings if h.get("symbol")]
+    related: dict[str, list[dict]] = {sym: [] for sym in symbols}
+    for item in news_items:
+        matched = item.get("matchedSymbols") or []
+        if not matched:
+            continue
+        for sym in matched:
+            if sym not in related:
+                continue
+            bucket = related[sym]
+            if len(bucket) >= per_symbol_limit:
+                continue
+            bucket.append(
+                {
+                    "title": item.get("title"),
+                    "url": item.get("url"),
+                    "publishedAtISO": item.get("publishedAtISO"),
+                    "direction": item.get("direction"),
+                    "impactScore": item.get("impactScore"),
+                    "low_signal": item.get("low_signal"),
+                }
+            )
+    return {sym: items for sym, items in related.items() if items}
+
+
+def compact_related_news_for_llm(
+    related_news: dict[str, list[dict]],
+    symbol_limit: int = 8,
+    per_symbol_limit: int = 2,
+) -> dict[str, list[dict]]:
+    compact: dict[str, list[dict]] = {}
+    for symbol in sorted((related_news or {}).keys())[: max(0, symbol_limit)]:
+        rows = related_news.get(symbol) or []
+        out: list[dict] = []
+        seen: set[str] = set()
+        for row in rows:
+            title = (row.get("title") or "").strip()
+            if not title:
+                continue
+            key = title.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(
+                {
+                    "title": title,
+                    "direction": row.get("direction"),
+                    "impactScore": row.get("impactScore"),
+                    "low_signal": bool(row.get("low_signal")),
+                }
+            )
+            if len(out) >= max(0, per_symbol_limit):
+                break
+        if out:
+            compact[symbol] = out
+    return compact
 
 
 def fetch_price(symbol: str) -> tuple[float | None, str, str | None]:
@@ -657,7 +804,8 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
     alias_map = load_aliases()
     settings = PortfolioSettings()
     start = time.time()
-    portfolio_terms = _build_portfolio_watchlist(alias_map)
+    holdings_seed = load_portfolio_holdings(pipeline.db, seed_defaults=True)
+    portfolio_terms = _build_portfolio_watchlist(alias_map, holdings_seed)
     watchlist_terms = sorted(set(portfolio_terms))
     wl_key = ",".join(watchlist_terms)
 
@@ -670,6 +818,10 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
     used_cache = False
     cache_hit = "miss"
     news_debug_notes: list[str] = []
+    local_news: list[NewsItem] = []
+    local_news_debug_notes: list[str] = []
+    local_cache_hit = "miss"
+    local_used_cache = False
 
     if getattr(pipeline, "cache", None) is not None:
         cached = None
@@ -801,6 +953,65 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
     else:
         pipeline_error = None
 
+    # Local-only TR/BIST headlines cache
+    if getattr(pipeline, "cache", None) is not None:
+        local_cached = None
+        local_keys = [
+            ("primary", cache_key("news_local", news_horizon, wl_key)),
+            ("all", cache_key("news_local", news_horizon, "all")),
+        ]
+        for name, key in local_keys:
+            if not key:
+                continue
+            try:
+                local_cached = pipeline.cache.get(key)
+            except Exception:
+                local_cached = None
+            if local_cached:
+                local_cache_hit = name
+                break
+        if local_cached:
+            local_news = [NewsItem(**n) for n in local_cached]
+            local_used_cache = True
+
+    if not local_used_cache and os.getenv("PORTFOLIO_LOCAL_NEWS_ENABLED", "true").lower() in ("1", "true", "yes", "on"):
+        try:
+            local_max = int(os.getenv("PORTFOLIO_LOCAL_NEWS_MAX", "24") or 24)
+            local_timeout = float(os.getenv("PORTFOLIO_LOCAL_NEWS_TIMEOUT", "4") or 4)
+            local_total_timeout = float(os.getenv("PORTFOLIO_LOCAL_NEWS_TOTAL_TIMEOUT", "12") or 12)
+            local_ex = ThreadPoolExecutor(max_workers=1)
+            future = local_ex.submit(collect_local_news, watchlist_terms, news_horizon, local_max, local_timeout)
+            try:
+                local_news, local_notes, local_counts = future.result(timeout=local_total_timeout)
+            except FuturesTimeoutError:
+                future.cancel()
+                local_news = []
+                local_notes = ["portfolio_local_news_timeout"]
+                local_counts = {}
+            finally:
+                local_ex.shutdown(wait=False, cancel_futures=True)
+            if local_notes:
+                local_news_debug_notes.extend(local_notes)
+            if local_counts:
+                local_news_debug_notes.append(f"portfolio_local_news_tr={local_counts.get('tr', 0)}")
+            if getattr(pipeline, "cache", None) is not None:
+                try:
+                    pipeline.cache.set(
+                        cache_key("news_local", news_horizon, wl_key),
+                        [n.model_dump() for n in local_news],
+                        300,
+                    )
+                    pipeline.cache.set(
+                        cache_key("news_local", news_horizon, "all"),
+                        [n.model_dump() for n in local_news],
+                        300,
+                    )
+                except Exception:
+                    pass
+        except Exception as exc:
+            local_news = []
+            local_news_debug_notes.append(f"portfolio_local_news_error={type(exc).__name__}")
+
     fx_symbol = alias_map.get("fx", {}).get("USDTRY", "USDTRY=X")
     fx_price, fx_source, _ = fetch_price(fx_symbol)
     fx_rate = fx_price or 0.0
@@ -812,7 +1023,7 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
     price_results: dict[str, tuple[float | None, str, str | None]] = {}
     with ThreadPoolExecutor(max_workers=6) as ex:
         futures = {}
-        for h in DEFAULT_HOLDINGS:
+        for h in holdings_seed:
             symbol = h["symbol"]
             data = alias_map.get("symbols", {}).get(symbol, {})
             yahoo_symbol = data.get("yahoo", symbol)
@@ -824,7 +1035,7 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
             except Exception:
                 price_results[yahoo_symbol] = (None, "missing", None)
 
-    for h in DEFAULT_HOLDINGS:
+    for h in holdings_seed:
         symbol = h["symbol"]
         data = alias_map.get("symbols", {}).get(symbol, {})
         yahoo_symbol = data.get("yahoo", symbol)
@@ -889,6 +1100,43 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
         for sym, score in n.get("impact_by_symbol_indirect", {}).items():
             asset_news_indirect[sym] = asset_news_indirect.get(sym, 0.0) + score
 
+    related_news = build_related_news(news_items, holdings, per_symbol_limit=4)
+    related_news_for_llm = compact_related_news_for_llm(related_news, symbol_limit=8, per_symbol_limit=2)
+    news_period = "daily" if news_horizon == "24h" else "weekly" if news_horizon == "7d" else "monthly"
+    top_news_limit = 40 if news_period == "monthly" else 20
+    local_news_limit = 40 if news_period == "monthly" else 20
+    top_news_brief = [
+        {
+            "title": n.title,
+            "source": n.source,
+            "publishedAtISO": n.publishedAtISO,
+            "url": n.url,
+        }
+        for n in top_news[:top_news_limit]
+    ]
+    news_headlines = [
+        {
+            "title": n.title,
+            "source": n.source,
+            "publishedAtISO": n.publishedAtISO,
+            "url": n.url,
+        }
+        for n in top_news
+    ]
+    local_headlines = [
+        {
+            "title": n.title,
+            "source": n.source,
+            "publishedAtISO": n.publishedAtISO,
+            "url": n.url,
+        }
+        for n in local_news
+    ]
+    local_headlines_brief = local_headlines[:local_news_limit]
+    top_titles_sent = len(top_news_brief)
+    local_titles_sent = len(local_headlines_brief)
+    total_titles_sent = top_titles_sent + local_titles_sent
+
     coverage_ratio = (len(news_items) / len(top_news)) if top_news else 0.0
     low_signal_ratio = (low_signal_count / max(1, len(news_items))) if news_items else 0.0
     recs = build_optimizer(
@@ -917,9 +1165,15 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
         f"portfolio_news_cache_hit={cache_hit if used_cache else 'miss'}",
         f"portfolio_news_watchlist_size={len(watchlist_terms)}",
         f"portfolio_news_cache_key_primary_len={len(wl_key)}",
+        f"portfolio_local_news_cache={'hit' if local_used_cache else 'miss'}",
+        f"portfolio_local_news_cache_hit={local_cache_hit if local_used_cache else 'miss'}",
+        f"portfolio_local_news_count={len(local_news)}",
         f"portfolio_pipeline_enabled_env={os.getenv('PORTFOLIO_PIPELINE_ENABLED', '')}",
         f"portfolio_pipeline_used={used_pipeline}",
         f"portfolio_news_fetched_total={len(top_news)}",
+        f"gemini_titles_sent_top={top_titles_sent}",
+        f"gemini_titles_sent_local={local_titles_sent}",
+        f"gemini_titles_sent_total={total_titles_sent}",
         f"portfolio_missing_prices={len(missing_prices)}",
         f"portfolio_fx_status={fx_status}",
         f"portfolio_news_matched={len(news_items)}",
@@ -933,6 +1187,8 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
     ]
     if news_debug_notes:
         debug_notes.extend(news_debug_notes)
+    if local_news_debug_notes:
+        debug_notes.extend(local_news_debug_notes)
     daily_rec = next((r for r in recs if r.get("period") == "daily"), None)
     if daily_rec and daily_rec.get("mode") == "HOLD":
         debug_notes.append("optimizer_hold_gate=true")
@@ -945,6 +1201,110 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
     if pipeline_error:
         debug_notes.append(f"portfolio_pipeline_error={pipeline_error}")
 
+    gemini_summary = None
+    gemini_error = None
+    gemini_enabled = _truthy(os.getenv("ENABLE_GEMINI_PORTFOLIO_SUMMARY"), default=True) and bool(
+        os.getenv("GEMINI_API_KEY")
+    )
+    if gemini_enabled:
+        try:
+            top_holdings = sorted(holdings, key=lambda h: h.get("weight", 0.0), reverse=True)[:12]
+            classified_holdings = []
+            for h in holdings:
+                meta = _classify_holding(h)
+                classified_holdings.append(
+                    {
+                        "symbol": h.get("symbol"),
+                        "weight": h.get("weight"),
+                        "mkt_value_base": h.get("mkt_value_base"),
+                        "asset_class": meta.get("asset_class"),
+                        "sector": meta.get("sector"),
+                        "is_precious_metal": meta.get("is_precious_metal"),
+                        "is_crypto": meta.get("is_crypto"),
+                        "currency": h.get("currency"),
+                    }
+                )
+            categorized = {}
+            for item in classified_holdings:
+                key = item.get("asset_class") or "UNKNOWN"
+                categorized.setdefault(key, []).append(item)
+            recs_brief = []
+            for rec in recs:
+                actions = [
+                    {
+                        "symbol": a.get("symbol"),
+                        "action": a.get("action"),
+                        "deltaWeight": a.get("deltaWeight"),
+                        "confidence": a.get("confidence"),
+                        "reason": (a.get("reason") or [])[:2],
+                    }
+                    for a in (rec.get("actions") or [])[:6]
+                ]
+                recs_brief.append(
+                    {
+                        "period": rec.get("period"),
+                        "status": rec.get("status"),
+                        "mode": rec.get("mode"),
+                        "notes": (rec.get("notes") or [])[:3],
+                        "actions": actions,
+                    }
+                )
+
+            payload = {
+                "asOfISO": _to_tsi(_now_iso()),
+                "baseCurrency": base_currency,
+                "newsHorizon": news_horizon,
+                "period": news_period,
+                "holdings": [
+                    {
+                        "symbol": h.get("symbol"),
+                        "weight": h.get("weight"),
+                        "mkt_value_base": h.get("mkt_value_base"),
+                        "asset_class": _classify_holding(h).get("asset_class"),
+                        "sector": _classify_holding(h).get("sector"),
+                        "is_precious_metal": _classify_holding(h).get("is_precious_metal"),
+                        "is_crypto": _classify_holding(h).get("is_crypto"),
+                        "currency": h.get("currency"),
+                    }
+                    for h in top_holdings
+                ],
+                "holdings_full": classified_holdings,
+                "holdings_by_class": categorized,
+                "relatedNews": related_news_for_llm,
+                "topNews": top_news_brief,
+                "localHeadlines": local_headlines_brief,
+                "localHeadlineCount": local_titles_sent,
+                "recommendations": recs_brief,
+                "riskFlags": risk_flags,
+                "coverage": {"matched": len(news_items), "total": len(top_news)},
+                "stats": {
+                    "coverage_ratio": coverage_ratio,
+                    "low_signal_ratio": low_signal_ratio,
+                    "fx_usd_exposure": usd_exposure,
+                    "portfolio_value_base": total_value,
+                    "news_titles_sent": top_titles_sent,
+                    "local_titles_sent": local_titles_sent,
+                    "news_titles_sent_total": total_titles_sent,
+                },
+            }
+            timeout = float(os.getenv("GEMINI_PORTFOLIO_TIMEOUT", "8") or 8)
+            gemini_summary, gemini_error = generate_portfolio_summary(payload, timeout=timeout)
+            if gemini_summary:
+                if gemini_error:
+                    debug_notes.append(f"gemini_portfolio_fallback={gemini_error}")
+                debug_notes.append("gemini_portfolio_summary=ok")
+            elif gemini_error:
+                debug_notes.append(f"gemini_portfolio_error={gemini_error}")
+        except Exception as exc:
+            gemini_error = type(exc).__name__
+            debug_notes.append(f"gemini_portfolio_exception={gemini_error}")
+
+    summary_error = ""
+    if gemini_summary and gemini_error:
+        summary_error = f"fallback:{gemini_error}"
+    elif (not gemini_summary) and gemini_error:
+        summary_error = gemini_error
+
     return {
         "asOfISO": _to_tsi(_now_iso()),
         "baseCurrency": base_currency,
@@ -955,6 +1315,11 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
         "newsImpact": {
             "horizon": news_horizon,
             "items": news_items,
+            "relatedNews": related_news,
+            "headlines": news_headlines,
+            "headline_count": len(news_headlines),
+            "local_headlines": local_headlines,
+            "local_headline_count": len(local_headlines),
             "summary": {
                 "impact_by_symbol": asset_news,
                 "impact_by_symbol_direct": asset_news_direct,
@@ -963,6 +1328,19 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
                 "coverage_ratio": coverage_ratio,
             },
             "coverage": {"total": len(top_news), "matched": len(news_items)},
+        },
+        "portfolioSummary": {
+            "provider": "gemini",
+            "summary": gemini_summary,
+            "data_status": "ok" if gemini_summary else "partial",
+            "error": summary_error,
+            "meta": {
+                "period": news_period,
+                "horizon": news_horizon,
+                "news_titles_sent": top_titles_sent,
+                "local_titles_sent": local_titles_sent,
+                "news_titles_sent_total": total_titles_sent,
+            },
         },
         "recommendations": recs,
         "optimizer_inputs": {"mom_z_weighted": mom_z_weighted},

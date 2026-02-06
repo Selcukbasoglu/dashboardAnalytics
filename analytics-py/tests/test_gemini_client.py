@@ -3,6 +3,8 @@ import os
 import unittest
 from unittest.mock import patch
 
+import requests
+
 from app.llm import gemini_client
 
 
@@ -61,7 +63,6 @@ class GeminiClientTests(unittest.TestCase):
         self.assertIn("Model Fikirleri", text)
 
     def test_generate_retries_after_rate_limit(self):
-        os.environ["GEMINI_API_KEY"] = "x"
         ok_payload = {
             "candidates": [
                 {
@@ -71,30 +72,135 @@ class GeminiClientTests(unittest.TestCase):
                 }
             ]
         }
-        with patch("app.llm.gemini_client.requests.post") as post, patch("app.llm.gemini_client.time.sleep"):
-            post.side_effect = [
-                _FakeResponse(429, text="rate limited"),
-                _FakeResponse(200, payload=ok_payload),
-            ]
-            with patch("app.llm.gemini_client._call_openrouter_fallback") as fallback:
-                summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
-                self.assertIsNotNone(summary)
-                self.assertIsNone(err)
-                self.assertEqual(post.call_count, 2)
-                fallback.assert_not_called()
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "x"}, clear=False):
+            with patch("app.llm.gemini_client.requests.post") as post, patch("app.llm.gemini_client.time.sleep"):
+                post.side_effect = [
+                    _FakeResponse(429, text="rate limited"),
+                    _FakeResponse(200, payload=ok_payload),
+                ]
+                with patch("app.llm.gemini_client._call_openrouter_fallback") as fallback:
+                    summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
+                    self.assertIsNotNone(summary)
+                    self.assertIsNone(err)
+                    self.assertEqual(post.call_count, 2)
+                    fallback.assert_not_called()
 
     def test_generate_uses_openrouter_after_final_rate_limit(self):
-        os.environ["GEMINI_API_KEY"] = "x"
-        with patch("app.llm.gemini_client.requests.post") as post, patch("app.llm.gemini_client.time.sleep"):
-            post.side_effect = [
-                _FakeResponse(429, text="rate limited"),
-                _FakeResponse(429, text="rate limited"),
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "x"}, clear=False):
+            with patch("app.llm.gemini_client.requests.post") as post, patch("app.llm.gemini_client.time.sleep"):
+                post.side_effect = [
+                    _FakeResponse(429, text="rate limited"),
+                    _FakeResponse(429, text="rate limited"),
+                ]
+                with patch("app.llm.gemini_client._call_openrouter_fallback", return_value=("Fallback text", None)):
+                    summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
+                    self.assertIsNotNone(summary)
+                    self.assertEqual(err, "fallback_openrouter")
+                    self.assertIn("Model Fikirleri", summary)
+
+    def test_generate_retries_without_system_instruction_after_400(self):
+        call_log: list[tuple[str, bool]] = []
+        ok_payload = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": (
+                                    "Haber Temelli Icgoruler\n- [KANIT:T1] deneme\n\n"
+                                    "Model Fikirleri (Varsayim)\n- Model gorusu (ORTA): deneme"
+                                )
+                            }
+                        ]
+                    }
+                }
             ]
-            with patch("app.llm.gemini_client._call_openrouter_fallback", return_value=("Fallback text", None)):
+        }
+
+        def _fake_post(url, headers=None, json=None, timeout=None):  # noqa: A002
+            has_system = isinstance(json, dict) and "systemInstruction" in json
+            call_log.append((url, has_system))
+            if len(call_log) == 1:
+                return _FakeResponse(400, text="invalid field: systemInstruction")
+            return _FakeResponse(200, payload=ok_payload)
+
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "x"}, clear=False):
+            with patch("app.llm.gemini_client.requests.post", side_effect=_fake_post):
                 summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
-                self.assertIsNotNone(summary)
-                self.assertEqual(err, "fallback_openrouter")
-                self.assertIn("Model Fikirleri", summary)
+        self.assertIsNotNone(summary)
+        self.assertIsNone(err)
+        self.assertEqual(len(call_log), 2)
+        self.assertTrue(call_log[0][1])
+        self.assertFalse(call_log[1][1])
+
+    def test_generate_switches_v1beta_to_v1_after_404(self):
+        call_log: list[str] = []
+        ok_payload = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": (
+                                    "Haber Temelli Icgoruler\n- [KANIT:T1] deneme\n\n"
+                                    "Model Fikirleri (Varsayim)\n- Model gorusu (ORTA): deneme"
+                                )
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+
+        def _fake_post(url, headers=None, json=None, timeout=None):  # noqa: A002
+            call_log.append(url)
+            if len(call_log) == 1:
+                return _FakeResponse(404, text="not found")
+            return _FakeResponse(200, payload=ok_payload)
+
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "x"}, clear=False):
+            with patch("app.llm.gemini_client.requests.post", side_effect=_fake_post):
+                summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
+        self.assertIsNotNone(summary)
+        self.assertIsNone(err)
+        self.assertEqual(len(call_log), 2)
+        self.assertIn("/v1beta/models", call_log[0])
+        self.assertIn("/v1/models", call_log[1])
+
+    def test_generate_uses_openrouter_after_timeout(self):
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "x"}, clear=False):
+            with patch("app.llm.gemini_client.requests.post", side_effect=requests.Timeout):
+                with patch("app.llm.gemini_client._call_openrouter_fallback", return_value=("Fallback timeout", None)):
+                    summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
+        self.assertIsNotNone(summary)
+        self.assertEqual(err, "fallback_openrouter")
+        self.assertIn("Model Fikirleri", summary)
+
+    def test_generate_returns_rate_limit_error_when_fallback_fails(self):
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "x"}, clear=False):
+            with patch("app.llm.gemini_client.requests.post") as post, patch("app.llm.gemini_client.time.sleep"):
+                post.side_effect = [
+                    _FakeResponse(429, text="rate limited"),
+                    _FakeResponse(429, text="rate limited"),
+                ]
+                with patch("app.llm.gemini_client._call_openrouter_fallback", return_value=(None, "missing_openrouter_key")):
+                    summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
+        self.assertIsNone(summary)
+        self.assertTrue((err or "").startswith("gemini_rate_limited:"))
+
+    def test_build_prompt_contains_contract_sections(self):
+        prepared = gemini_client._prepare_payload(_payload(), budget_chars=5000)
+        prompt = gemini_client._build_prompt(prepared)
+        self.assertIn("ZORUNLU CIKTI BASLIKLARI", prompt)
+        self.assertIn("Haber Temelli Icgoruler", prompt)
+        self.assertIn("Model Fikirleri (Varsayim)", prompt)
+        self.assertIn("[KANIT:Tx/Lx]", prompt)
+
+    def test_generate_returns_missing_key_without_env(self):
+        with patch.dict(os.environ, {}, clear=True):
+            summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
+        self.assertIsNone(summary)
+        self.assertEqual(err, "missing_key")
 
 
 if __name__ == "__main__":

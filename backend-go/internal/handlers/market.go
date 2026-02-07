@@ -22,8 +22,8 @@ func (a *API) Market(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := timeboxed(r, a.cfg.RequestTimeout)
 	defer cancel()
 
-	resp, _ := a.getIntel(ctx, "1h", "6h", nil)
-	if resp.TsISO == "" {
+	resp, _, err := a.intel.GetSnapshot(ctx, "1h", "6h", nil)
+	if resp.TsISO == "" || err != nil {
 		writeJSON(w, http.StatusOK, models.MarketSnapshot{TsISO: nowISO()})
 		return
 	}

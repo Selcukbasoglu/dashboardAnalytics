@@ -27,16 +27,16 @@ func (a *API) StreamIntel(w http.ResponseWriter, r *http.Request) {
 	watch := parseWatchlist(q.Get("watch"), a.cfg.MaxWatchlist)
 
 	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Cache-Control", "no-cache, no-transform")
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
 
-	ticker := time.NewTicker(5 * time.Second)
-	defer ticker.Stop()
+	ch, unsubscribe := a.intel.Subscribe(r.Context(), timeframe, newsTimespan, watch, 5*time.Second)
+	defer unsubscribe()
 
-	send := func() bool {
+	send := func(meta map[string]any) {
 		ctx, cancel := context.WithTimeout(r.Context(), a.cfg.RequestTimeout)
 		defer cancel()
-		resp, err := a.getIntelStream(ctx, timeframe, newsTimespan, watch)
 		quotes, qerr := a.quotes.Fetch(ctx, []string{
 			"BTC",
 			"ETH",
@@ -176,12 +176,15 @@ func (a *API) StreamIntel(w http.ResponseWriter, r *http.Request) {
 			"FIBI.TA",
 		})
 		payload := map[string]any{
-			"tsISO":  resp.TsISO,
-			"market": resp.Market,
-			"risk":   resp.Risk,
+			"tsISO":  meta["tsISO"],
+			"market": meta["market"],
+			"risk":   meta["risk"],
 		}
-		if err != nil {
-			payload["error"] = err.Error()
+		for k, v := range meta {
+			if k == "tsISO" || k == "market" || k == "risk" {
+				continue
+			}
+			payload[k] = v
 		}
 		if len(quotes) > 0 {
 			payload["quotes"] = quotes
@@ -192,16 +195,27 @@ func (a *API) StreamIntel(w http.ResponseWriter, r *http.Request) {
 		data, _ := json.Marshal(payload)
 		_, _ = fmt.Fprintf(w, "data: %s\n\n", data)
 		flusher.Flush()
-		return err == nil
 	}
 
-	send()
 	for {
 		select {
 		case <-r.Context().Done():
 			return
-		case <-ticker.C:
-			send()
+		case snap, ok := <-ch:
+			if !ok {
+				return
+			}
+			meta := map[string]any{
+				"tsISO":        snap.Resp.TsISO,
+				"market":       snap.Resp.Market,
+				"risk":         snap.Resp.Risk,
+				"intel_source": snap.Meta.Source,
+				"intel_stale":  snap.Meta.Stale,
+			}
+			if snap.Meta.Err != "" {
+				meta["intel_error"] = snap.Meta.Err
+			}
+			send(meta)
 		}
 	}
 }

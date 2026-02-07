@@ -115,11 +115,14 @@ def _fetch_keyinfo(api_key: str, base: str, timeout: float) -> tuple[dict | None
             timeout=timeout,
         )
         if res.status_code == 401:
-            return None, "invalid_key"
+            body = (res.text or "")[:200]
+            return None, f"invalid_key:{body}"
         if res.status_code == 402:
-            return None, "insufficient_credits"
+            body = (res.text or "")[:200]
+            return None, f"insufficient_credits:{body}"
         if res.status_code >= 300:
-            return None, f"status:{res.status_code}"
+            body = (res.text or "")[:200]
+            return None, f"status:{res.status_code}:{body}"
         data = res.json()
         _keyinfo_cache["ts"] = time.time()
         _keyinfo_cache["data"] = data
@@ -412,13 +415,16 @@ def _call_openrouter_model(
                 res = requests.post(url, headers=headers, json=payload, timeout=timeout)
             if res.status_code in (401, 402):
                 _mark_unavailable(model)
-                return "fail", None, f"status:{res.status_code}"
+                body = (res.text or "")[:200]
+                return "fail", None, f"status:{res.status_code}:{body}"
             if res.status_code == 429:
                 _mark_unavailable(model)
-                return "fail", None, "rate_limited"
+                body = (res.text or "")[:200]
+                return "fail", None, f"rate_limited:{body}"
             if res.status_code == 503:
                 _mark_unavailable(model)
-                return "fail", None, "no_provider"
+                body = (res.text or "")[:200]
+                return "fail", None, f"no_provider:{body}"
             if res.status_code >= 300:
                 body = (res.text or "")[:200]
                 return "fail", None, f"status:{res.status_code}:{body}"

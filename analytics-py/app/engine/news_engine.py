@@ -47,6 +47,11 @@ from app.llm.openai_client import summarize_article_openai, summary_enabled
 from app.providers.gdelt import search_gdelt, search_gdelt_context
 from app.providers.rss import PRESS_RELEASE_FEEDS, TR_NEWS_FEEDS, search_rss, search_rss_local
 from app.providers.finnhub_news import fetch_finnhub_company_news
+from app.providers.tr_local_scrape import (
+    TR_LOCAL_SCRAPE_DOMAINS,
+    filter_tr_local_scraped_items,
+    search_tr_local_scrape,
+)
 from app.engine.labels import (
     PERSONAL_GROUPS,
     PERSONAL_KEYWORDS,
@@ -189,7 +194,28 @@ def _is_local_domain(domain: str, local_domains: set[str]) -> bool:
     if not domain or not local_domains:
         return False
     return domain.lower() in local_domains
-TR_DOMAINS = {"kap.org.tr"}
+TR_DOMAINS = {
+    "aa.com.tr",
+    "bloomberght.com",
+    "cnnturk.com",
+    "dunya.com",
+    "ekonomim.com",
+    "ensonhaber.com",
+    "finansgundem.com",
+    "haber7.com",
+    "haberglobal.com.tr",
+    "haberturk.com",
+    "hurriyet.com.tr",
+    "kap.org.tr",
+    "karar.com",
+    "milliyet.com.tr",
+    "mynet.com",
+    "ntv.com.tr",
+    "para.com.tr",
+    "paraanaliz.com",
+    "sozcu.com.tr",
+    "trthaber.com",
+}
 
 TAG_RULES = [
     ("War", 4, [r"\bwar\b", r"ceasefire", r"missile", r"conflict", r"ukraine", r"gaza", r"iran", r"yemen", r"red sea"]),
@@ -1766,12 +1792,18 @@ def collect_news(
         local_max_feeds = int(os.getenv("LOCAL_RSS_MAX_FEEDS", "4") or 4)
         local_max_terms = int(os.getenv("LOCAL_RSS_MAX_TERMS", "4") or 4)
         local_extra_feeds = TR_NEWS_FEEDS[:local_max_feeds]
-        local_terms = []
+        local_terms: list[str] = []
         for sym in watchlist[: min(len(watchlist), 4)]:
-            local_terms.append(sym)
-        local_terms.extend(_load_bist_alias_terms()[:6])
+            if sym not in local_terms:
+                local_terms.append(sym)
+        if len(local_terms) < 2:
+            for alias in _load_bist_alias_terms()[:6]:
+                if alias not in local_terms:
+                    local_terms.append(alias)
+                if len(local_terms) >= 2:
+                    break
         for term in local_terms[:local_max_terms]:
-            q = f"{term} BIST"
+            q = f"{term} Borsa Istanbul"
             rss_raw = search_rss_local(
                 q,
                 max_items=min(8, maxrecords),
@@ -1867,12 +1899,18 @@ def collect_news_extras(
         local_max_feeds = int(os.getenv("LOCAL_RSS_MAX_FEEDS", "4") or 4)
         local_max_terms = int(os.getenv("LOCAL_RSS_MAX_TERMS", "4") or 4)
         local_extra_feeds = TR_NEWS_FEEDS[:local_max_feeds]
-        local_terms = []
+        local_terms: list[str] = []
         for sym in watchlist[: min(len(watchlist), 4)]:
-            local_terms.append(sym)
-        local_terms.extend(_load_bist_alias_terms()[:6])
+            if sym not in local_terms:
+                local_terms.append(sym)
+        if len(local_terms) < 2:
+            for alias in _load_bist_alias_terms()[:6]:
+                if alias not in local_terms:
+                    local_terms.append(alias)
+                if len(local_terms) >= 2:
+                    break
         for term in local_terms[:local_max_terms]:
-            q = f"{term} BIST"
+            q = f"{term} Borsa Istanbul"
             rss_raw = search_rss_local(
                 q,
                 max_items=min(8, maxrecords),
@@ -1902,20 +1940,22 @@ def collect_local_news(
 ) -> Tuple[List[NewsItem], List[str], dict]:
     notes: List[str] = []
     items: List[NewsItem] = []
-    provider_counts = {"tr": 0}
+    provider_counts = {"tr": 0, "tr_scrape": 0}
     if not watchlist and not TR_NEWS_FEEDS:
         return items, ["local_news_empty"], provider_counts
 
     local_max_feeds = int(os.getenv("LOCAL_RSS_MAX_FEEDS", "4") or 4)
     local_max_terms = int(os.getenv("LOCAL_RSS_MAX_TERMS", "4") or 4)
     local_extra_feeds = TR_NEWS_FEEDS[:local_max_feeds]
+    scrape_timeout = min(3.0, timeout)
+    scrape_pool_size = max(maxrecords, 24)
 
-    # Base local sweep without query filtering (headline-only)
+    # Base local sweep with strict BIST terms to avoid generic headline noise.
     base_raw = search_rss_local(
-        "",
+        "borsa istanbul hisse halka arz",
         max_items=maxrecords,
         extra_feeds=local_extra_feeds,
-        strict=False,
+        strict=True,
         timespan=timespan,
         timeout=min(6.0, timeout),
     )
@@ -1924,7 +1964,26 @@ def collect_local_news(
         items.extend(base_items)
         notes.append("rss_local_base")
 
-    if len(items) >= maxrecords:
+    scraped_pool_raw = search_tr_local_scrape(
+        "",
+        max_items=scrape_pool_size,
+        timespan=timespan,
+        timeout=scrape_timeout,
+        raw=True,
+    )
+    scraped_base_raw = filter_tr_local_scraped_items(
+        scraped_pool_raw,
+        "",
+        max_items=scrape_pool_size,
+        strict=False,
+        timespan=timespan,
+    )
+    scraped_base_items = normalize_rss(scraped_base_raw)
+    if scraped_base_items:
+        items.extend(scraped_base_items)
+        notes.append("scrape_local_base")
+
+    if len(items) >= maxrecords and not watchlist:
         items = items[:maxrecords]
         if items:
             items = dedup_global(items)
@@ -1932,38 +1991,62 @@ def collect_local_news(
             domain = extract_domain(it.url or "")
             if domain in TR_DOMAINS:
                 provider_counts["tr"] += 1
+            if domain in TR_LOCAL_SCRAPE_DOMAINS:
+                provider_counts["tr_scrape"] += 1
         return items, notes, provider_counts
 
     local_terms: list[str] = []
     for sym in watchlist[: min(len(watchlist), 4)]:
-        local_terms.append(sym)
-    local_terms.extend(_load_bist_alias_terms()[:6])
-    local_terms.extend(["BIST", "Borsa Istanbul"])
+        if sym not in local_terms:
+            local_terms.append(sym)
+    if len(local_terms) < 2:
+        for alias in _load_bist_alias_terms()[:6]:
+            if alias not in local_terms:
+                local_terms.append(alias)
+            if len(local_terms) >= 2:
+                break
+    local_terms.append("Borsa Istanbul")
 
     max_per_term = min(8, maxrecords)
     for term in local_terms[:local_max_terms]:
-        q = f"{term} BIST" if term not in ("BIST", "Borsa Istanbul") else term
-        strict = term not in ("BIST", "Borsa Istanbul")
+        q = f"{term} Borsa Istanbul" if term != "Borsa Istanbul" else term
         rss_raw = search_rss_local(
             q,
             max_items=max_per_term,
             extra_feeds=local_extra_feeds,
-            strict=strict,
+            strict=True,
             timespan=timespan,
             timeout=min(6.0, timeout),
         )
         rss_items = normalize_rss(rss_raw)
         if not rss_items:
-            continue
-        items.extend(rss_items)
-        notes.append("rss_local_term")
+            rss_items = []
+        if rss_items:
+            items.extend(rss_items)
+            notes.append("rss_local_term")
+
+        scraped_term_raw = filter_tr_local_scraped_items(
+            scraped_pool_raw,
+            q,
+            max_items=max_per_term,
+            strict=term != "Borsa Istanbul",
+            timespan=timespan,
+        )
+        scraped_term_items = normalize_rss(scraped_term_raw)
+        if scraped_term_items:
+            items.extend(scraped_term_items)
+            notes.append("scrape_local_term")
 
     if items:
         items = dedup_global(items)
+        if len(items) > maxrecords:
+            items = items[:maxrecords]
         for it in items:
             domain = extract_domain(it.url or "")
             if domain in TR_DOMAINS:
                 provider_counts["tr"] += 1
+            if domain in TR_LOCAL_SCRAPE_DOMAINS:
+                provider_counts["tr_scrape"] += 1
 
     return items, notes, provider_counts
 

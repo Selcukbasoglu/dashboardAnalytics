@@ -82,6 +82,7 @@ type limiter struct {
 	mu       sync.Mutex
 	perMin   int
 	buckets  map[string]*bucket
+	lastCleanup time.Time
 }
 
 type bucket struct {
@@ -99,6 +100,14 @@ func (l *limiter) Allow(ip string) bool {
 
 	b, ok := l.buckets[ip]
 	now := time.Now()
+	if l.lastCleanup.IsZero() || now.Sub(l.lastCleanup) > time.Minute {
+		for key, bucket := range l.buckets {
+			if now.After(bucket.reset) {
+				delete(l.buckets, key)
+			}
+		}
+		l.lastCleanup = now
+	}
 	if !ok || now.After(b.reset) {
 		l.buckets[ip] = &bucket{count: 1, reset: now.Add(time.Minute)}
 		return true

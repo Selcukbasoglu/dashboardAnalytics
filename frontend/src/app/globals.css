@@ -2,7 +2,7 @@
 
 :root {
   color-scheme: light dark;
-  --bg: #f6f1ea;
+  --bg: #f4f5f7;
   --ink: #131414;
   --panel: rgba(255, 255, 255, 0.82);
   --panel-strong: #ffffff;
@@ -31,11 +31,11 @@
 }
 
 body {
-  background: radial-gradient(circle at 10% 10%, rgba(31, 91, 74, 0.08), transparent 45%),
-    radial-gradient(circle at 90% 20%, rgba(230, 126, 34, 0.08), transparent 40%),
-    linear-gradient(180deg, #fdfbf7 0%, #f2ece4 100%);
+  background: radial-gradient(circle at 15% 10%, rgba(255, 255, 255, 0.8), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(15, 23, 42, 0.04), transparent 40%),
+    linear-gradient(180deg, #f7f8fa 0%, #edf1f4 100%);
   color: var(--ink);
-  font-family: var(--font-body), "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-family: var(--font-body), "Nunito", "Segoe UI", sans-serif;
   min-height: 100vh;
 }
 
@@ -94,7 +94,7 @@ h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-display), "Space Grotesk", "Trebuchet MS", sans-serif;
+  font-family: var(--font-body), "Nunito", "Trebuchet MS", sans-serif;
 }
 
 @keyframes mq-marquee {

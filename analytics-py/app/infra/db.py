@@ -194,6 +194,24 @@ def _create_schema(db: DB) -> None:
     )
     db.execute(
         """
+        CREATE TABLE IF NOT EXISTS portfolio_holdings (
+            symbol TEXT PRIMARY KEY,
+            qty REAL NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )
+        """
+    )
+    db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS app_state (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )
+        """
+    )
+    db.execute(
+        """
         CREATE TABLE IF NOT EXISTS event_impact (
             cluster_id TEXT NOT NULL,
             target TEXT NOT NULL,

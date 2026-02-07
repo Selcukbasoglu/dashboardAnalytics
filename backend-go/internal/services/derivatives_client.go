@@ -102,11 +102,27 @@ func (c *DerivativesClient) Get(ctx context.Context, exchange string, symbol str
 }
 
 func normalizeExchange(exchange string) string {
-	return "binance"
+	switch strings.ToLower(exchange) {
+	case "binance", "":
+		return "binance"
+	case "okx":
+		return "okx"
+	case "bybit":
+		return "bybit"
+	default:
+		return "binance"
+	}
 }
 
 func (c *DerivativesClient) fetch(ctx context.Context, exchange string, symbol string) (models.DerivativesResponse, string, error) {
-	return c.fetchBinance(ctx, symbol)
+	switch exchange {
+	case "okx":
+		return c.fetchOKX(ctx, symbol)
+	case "bybit":
+		return c.fetchBybit(ctx, symbol)
+	default:
+		return c.fetchBinance(ctx, symbol)
+	}
 }
 
 func (c *DerivativesClient) fetchBinance(ctx context.Context, symbol string) (models.DerivativesResponse, string, error) {

@@ -5,7 +5,7 @@ import os
 from datetime import datetime, timedelta, timezone
 import time
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from app.config import load_settings
 from app.infra.cache import init_cache, now_iso
@@ -17,9 +17,13 @@ from app.services.forecasting import compute_metrics, load_clusters
 from app.services.event_impact import load_event_impacts_all
 from app.services.intel_pipeline import IntelPipelineService
 from app.services.quote_router import get_quote_router, TTLCache
-from app.services.portfolio_engine import build_portfolio
+from app.services.portfolio_engine import (
+    build_portfolio,
+    load_portfolio_holdings,
+    remove_portfolio_holding,
+    upsert_portfolio_holding,
+)
 from app.services.portfolio_brief import build_daily_brief
-from app.services.debate_engine import get_cached_debate, run_debate
 
 app = FastAPI()
 settings = load_settings()
@@ -29,6 +33,22 @@ purge_old(db, settings.retention_days)
 pipeline = IntelPipelineService(settings, cache, db)
 
 _fallback_quote_cache = TTLCache(60, time.time)
+PROVIDER_ONLY_ASSETS = {
+    "NASDAQ",
+    "AAPL",
+    "MSFT",
+    "AMZN",
+    "GOOGL",
+    "META",
+    "NVDA",
+    "TSLA",
+    "MSTR",
+    "COIN",
+    "AMD",
+    "PLTR",
+    "HL",
+    "SIL",
+}
 
 
 @app.get("/health")
@@ -84,6 +104,8 @@ def health():
             "OPENAI_API_KEY": bool(os.getenv("OPENAI_API_KEY")),
             "OPENAI_MODEL": bool(os.getenv("OPENAI_MODEL")),
             "ENABLE_OPENAI_SUMMARY": os.getenv("ENABLE_OPENAI_SUMMARY") is not None,
+            "GEMINI_API_KEY": bool(os.getenv("GEMINI_API_KEY")),
+            "GEMINI_MODEL": bool(os.getenv("GEMINI_MODEL") or os.getenv("GEMINI_MODEL_PRIMARY")),
             "PY_INTEL_BASE_URL": bool(os.getenv("PY_INTEL_BASE_URL")),
             "DATABASE_URL": bool(os.getenv("DATABASE_URL")),
             "NEXT_PUBLIC_API_BASE": bool(os.getenv("NEXT_PUBLIC_API_BASE")),
@@ -92,6 +114,7 @@ def health():
             "finnhub_fallback_enabled": bool(os.getenv("FINNHUB_API_KEY")),
             "twelvedata_fallback_enabled": bool(os.getenv("TWELVEDATA_API_KEY")),
             "openai_summaries_enabled": openai_enabled,
+            "gemini_portfolio_enabled": bool(os.getenv("GEMINI_API_KEY")),
         },
     }
 
@@ -173,6 +196,39 @@ def portfolio(base: str = "TRY", horizon: str = "24h"):
     return build_portfolio(pipeline, base_currency=base, news_horizon=horizon)
 
 
+@app.get("/api/v1/portfolio/holdings")
+def portfolio_holdings_get():
+    holdings = load_portfolio_holdings(db, seed_defaults=True)
+    return {"holdings": holdings, "count": len(holdings)}
+
+
+@app.post("/api/v1/portfolio/holdings")
+def portfolio_holdings_post(payload: dict):
+    symbol = (payload.get("symbol") or "").strip().upper()
+    qty = payload.get("qty")
+    if not symbol:
+        raise HTTPException(status_code=400, detail="symbol_required")
+    try:
+        qty_val = float(qty)
+    except Exception:
+        raise HTTPException(status_code=400, detail="qty_invalid")
+    if qty_val <= 0:
+        raise HTTPException(status_code=400, detail="qty_invalid")
+    upsert_portfolio_holding(db, symbol, qty_val)
+    holdings = load_portfolio_holdings(db, seed_defaults=False)
+    return {"holdings": holdings, "count": len(holdings)}
+
+
+@app.delete("/api/v1/portfolio/holdings")
+def portfolio_holdings_delete(symbol: str):
+    symbol = (symbol or "").strip().upper()
+    if not symbol:
+        raise HTTPException(status_code=400, detail="symbol_required")
+    remove_portfolio_holding(db, symbol)
+    holdings = load_portfolio_holdings(db, seed_defaults=False)
+    return {"holdings": holdings, "count": len(holdings)}
+
+
 @app.get("/api/v1/portfolio/daily-brief")
 @app.get("/portfolio/daily-brief")
 def portfolio_daily_brief(base: str = "TRY", window: str = "24h", period: str = "daily"):
@@ -203,49 +259,6 @@ def portfolio_daily_brief(base: str = "TRY", window: str = "24h", period: str = 
         )
 
 
-@app.get("/api/v1/portfolio/debate")
-def portfolio_debate_get(base: str = "TRY", window: str = "24h", horizon: str = "daily"):
-    base = (base or "TRY").upper()
-    if base not in ("TRY", "USD"):
-        base = "TRY"
-    if window not in ("24h", "7d", "30d"):
-        window = "24h"
-    horizon = (horizon or "daily").lower()
-    if horizon not in ("daily", "weekly", "monthly"):
-        horizon = "daily"
-    cached = get_cached_debate(pipeline, base, window, horizon)
-    if cached:
-        return cached
-    return {
-        "generatedAtTSI": datetime.now(timezone.utc).isoformat(),
-        "dataStatus": "partial",
-        "reason": "NO_CACHED_DEBATE",
-        "cache": {"hit": False, "ttl_seconds": int(os.getenv("PORTFOLIO_DEBATE_TTL_SECONDS", "21600")), "cooldown_remaining_seconds": 0},
-        "providers": {"openrouter": "skipped", "gemini": "skipped"},
-        "winner": "single",
-        "consensus": {},
-        "disagreements": {},
-        "raw": {},
-        "debug_notes": ["no_cached_debate"],
-    }
-
-
-@app.post("/api/v1/portfolio/debate")
-def portfolio_debate_post(payload: dict):
-    base = (payload.get("base") or "TRY").upper()
-    window = payload.get("window") or "24h"
-    horizon = payload.get("horizon") or "daily"
-    force = bool(payload.get("force", False))
-    if base not in ("TRY", "USD"):
-        base = "TRY"
-    if window not in ("24h", "7d", "30d"):
-        window = "24h"
-    horizon = (horizon or "daily").lower()
-    if horizon not in ("daily", "weekly", "monthly"):
-        horizon = "daily"
-    return run_debate(pipeline, base, window, horizon, force=force)
-
-
 @app.get("/quotes/latest")
 def quotes_latest(assets: str):
     assets_list = [a.strip().upper() for a in (assets or "").split(",") if a.strip()]
@@ -254,6 +267,41 @@ def quotes_latest(assets: str):
     quotes = {}
     router = get_quote_router()
     for asset in assets_list:
+        if asset in PROVIDER_ONLY_ASSETS:
+            cached = _fallback_quote_cache.get(asset)
+            if cached and cached.get("price"):
+                quotes[asset] = cached
+                continue
+            result = router.get_quote(asset)
+            if result.ok and result.data:
+                quotes[asset] = {
+                    "price": result.data.price,
+                    "change_pct": result.data.change_pct,
+                    "updated_iso": result.data.ts_utc,
+                }
+                _fallback_quote_cache.set(asset, quotes[asset])
+                continue
+            try:
+                chart = _fetch_chart(asset, "5d", "1d", 4.0)
+                if chart and chart.get("df") is not None and not chart["df"].empty:
+                    df = chart["df"]
+                    closes = df["Close"].dropna()
+                    if not closes.empty:
+                        last_close = float(closes.iloc[-1])
+                        prev_close = float(closes.iloc[-2]) if len(closes) > 1 else None
+                        change_pct = None
+                        if prev_close and prev_close != 0:
+                            change_pct = (last_close - prev_close) / prev_close * 100.0
+                        updated_iso = df.index[-1].to_pydatetime().isoformat().replace("+00:00", "Z")
+                        quotes[asset] = {
+                            "price": last_close,
+                            "change_pct": change_pct,
+                            "updated_iso": updated_iso,
+                        }
+                        _fallback_quote_cache.set(asset, quotes[asset])
+                        continue
+            except Exception:
+                pass
         row = db.fetchone(
             "SELECT ts_utc, close FROM price_bars WHERE asset = ? ORDER BY ts_utc DESC LIMIT 1",
             (asset,),
@@ -333,6 +381,22 @@ def bars_latest(assets: str, limit: int = 96):
     limit = max(8, min(int(limit or 96), 192))
     out = {}
     for asset in assets_list:
+        if asset in PROVIDER_ONLY_ASSETS:
+            try:
+                chart = _fetch_chart(asset, "5d", "1h", 4.0)
+                if chart and chart.get("df") is not None and not chart["df"].empty:
+                    df = chart["df"]
+                    points = [
+                        {"ts": idx.to_pydatetime().isoformat().replace("+00:00", "Z"), "close": float(close)}
+                        for idx, close in df["Close"].dropna().items()
+                    ]
+                    if points:
+                        points = points[-limit:]
+                        out[asset] = {"updated_iso": points[-1]["ts"], "points": points}
+                        continue
+            except Exception:
+                continue
+
         rows = db.fetchall(
             "SELECT ts_utc, close FROM price_bars WHERE asset = ? ORDER BY ts_utc DESC LIMIT ?",
             (asset, limit),

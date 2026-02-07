@@ -16,9 +16,10 @@ import (
 )
 
 type PythonClient struct {
-	baseURL string
-	hc      *http.Client
-	cb      *circuitBreaker
+	baseURL      string
+	hc           *http.Client
+	intelTimeout time.Duration
+	cb           *circuitBreaker
 }
 
 type UpstreamError struct {
@@ -31,11 +32,11 @@ func (e *UpstreamError) Error() string {
 }
 
 type circuitBreaker struct {
-	mu          sync.Mutex
-	failures    int
-	threshold   int
-	openedAt    time.Time
-	cooldown    time.Duration
+	mu        sync.Mutex
+	failures  int
+	threshold int
+	openedAt  time.Time
+	cooldown  time.Duration
 }
 
 func newCircuitBreaker(threshold int, cooldown time.Duration) *circuitBreaker {
@@ -78,7 +79,8 @@ func NewPythonClient(cfg config.Config) *PythonClient {
 		hc: &http.Client{
 			Timeout: cfg.RequestTimeout,
 		},
-		cb: newCircuitBreaker(cfg.CircuitFailLimit, cfg.CircuitCooldown),
+		intelTimeout: cfg.IntelTimeout,
+		cb:           newCircuitBreaker(cfg.CircuitFailLimit, cfg.CircuitCooldown),
 	}
 }
 
@@ -110,6 +112,10 @@ func (c *PythonClient) RunIntel(ctx context.Context, req models.IntelRequest) (m
 	}
 
 	url := c.baseURL + "/intel/run"
+	intelClient := *c.hc
+	if c.intelTimeout > 0 {
+		intelClient.Timeout = c.intelTimeout
+	}
 	var lastErr error
 	for attempt := 0; attempt < 3; attempt++ {
 		hreq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(payload))
@@ -118,7 +124,7 @@ func (c *PythonClient) RunIntel(ctx context.Context, req models.IntelRequest) (m
 		}
 		hreq.Header.Set("Content-Type", "application/json")
 
-		res, err := c.hc.Do(hreq)
+		res, err := intelClient.Do(hreq)
 		if err != nil {
 			lastErr = err
 			select {
@@ -130,9 +136,9 @@ func (c *PythonClient) RunIntel(ctx context.Context, req models.IntelRequest) (m
 			}
 		}
 
-		defer res.Body.Close()
 		if res.StatusCode >= 300 {
 			lastErr = fmt.Errorf("python intel: %s", res.Status)
+			res.Body.Close()
 			select {
 			case <-ctx.Done():
 				c.cb.fail()
@@ -144,6 +150,7 @@ func (c *PythonClient) RunIntel(ctx context.Context, req models.IntelRequest) (m
 
 		if err := json.NewDecoder(res.Body).Decode(&out); err != nil {
 			lastErr = err
+			res.Body.Close()
 			select {
 			case <-ctx.Done():
 				c.cb.fail()
@@ -153,6 +160,7 @@ func (c *PythonClient) RunIntel(ctx context.Context, req models.IntelRequest) (m
 			}
 		}
 
+		res.Body.Close()
 		c.cb.success()
 		return out, nil
 	}
@@ -262,6 +270,27 @@ func (c *PythonClient) PostJSONWithStatus(ctx context.Context, path string, body
 		return 0, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	res, err := c.hc.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer res.Body.Close()
+	status := res.StatusCode
+	if status >= 300 {
+		bodyStr, _ := io.ReadAll(io.LimitReader(res.Body, 4096))
+		return status, &UpstreamError{Status: status, Body: string(bodyStr)}
+	}
+	if err := json.NewDecoder(res.Body).Decode(out); err != nil {
+		return status, err
+	}
+	return status, nil
+}
+
+func (c *PythonClient) DeleteJSONWithStatus(ctx context.Context, path string, out any) (int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, c.baseURL+path, nil)
+	if err != nil {
+		return 0, err
+	}
 	res, err := c.hc.Do(req)
 	if err != nil {
 		return 0, err

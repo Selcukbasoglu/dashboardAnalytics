@@ -11,7 +11,12 @@ from typing import Any
 from app.infra.cache import cache_key, now_iso
 from app.models import NewsItem
 from app.services.portfolio_engine import build_portfolio, PortfolioSettings
-from app.llm.debate_providers import call_openrouter, call_openrouter_openai, call_openrouter_referee, get_openrouter_debug
+from app.llm.debate_providers import (
+    call_gemini,
+    call_openrouter,
+    call_openrouter_referee,
+    get_openrouter_debug,
+)
 from app.engine.news_engine import SECTOR_ROLLING_EVENTS
 from app.providers.yahoo import _fetch_chart
 
@@ -491,16 +496,16 @@ def _map_error_code(err: str | None) -> str | None:
     return "unknown"
 
 
-def _consensus(openrouter: dict | None, openai: dict | None) -> dict:
-    if not openrouter or not openai:
+def _consensus(openrouter: dict | None, gemini: dict | None) -> dict:
+    if not openrouter or not gemini:
         return {}
     g_trim = {(t.get("symbol"), t.get("action")) for t in openrouter.get("trimSignals", []) or []}
-    c_trim = {(t.get("symbol"), t.get("action")) for t in openai.get("trimSignals", []) or []}
+    c_trim = {(t.get("symbol"), t.get("action")) for t in gemini.get("trimSignals", []) or []}
     common = g_trim & c_trim
     return {"trimSignals": list(common)}
 
 
-def _referee_context(context: dict, openrouter_data: dict, openai_data: dict, base: str, window: str, horizon: str) -> dict:
+def _referee_context(context: dict, openrouter_data: dict, gemini_data: dict, base: str, window: str, horizon: str) -> dict:
     constraints = context.get("constraintsSnapshot") or {}
     global_summary = context.get("globalNewsSummary") or {}
     portfolio_summary = context.get("portfolioNewsSummary") or {}
@@ -528,7 +533,7 @@ def _referee_context(context: dict, openrouter_data: dict, openai_data: dict, ba
             "fx_risk": "fx_risk_up" in (risk.get("flags") or []),
         },
         "provider_a": {"name": "openrouter", "plan": openrouter_data},
-        "provider_b": {"name": "openai", "plan": openai_data},
+        "provider_b": {"name": "gemini", "plan": gemini_data},
     }
 
 
@@ -555,7 +560,7 @@ def run_debate(pipeline, base: str, window: str, horizon: str, force: bool = Fal
             "generatedAtTSI": _format_tsi(),
             "dataStatus": "partial",
             "cache": {"hit": False, "ttl_seconds": ttl, "cooldown_remaining_seconds": 0},
-            "providers": {"openrouter": "skipped", "openai": "skipped"},
+            "providers": {"openrouter": "skipped", "gemini": "skipped"},
             "winner": "single",
             "consensus": {},
             "disagreements": {},
@@ -584,7 +589,7 @@ def run_debate(pipeline, base: str, window: str, horizon: str, force: bool = Fal
                 "generatedAtTSI": _format_tsi(),
                 "dataStatus": "partial",
                 "cache": {"hit": False, "ttl_seconds": ttl, "cooldown_remaining_seconds": remaining},
-                "providers": {"openrouter": "skipped", "openai": "skipped"},
+                "providers": {"openrouter": "skipped", "gemini": "skipped"},
                 "winner": "single",
                 "consensus": {},
                 "disagreements": {},
@@ -607,7 +612,7 @@ def run_debate(pipeline, base: str, window: str, horizon: str, force: bool = Fal
                 "generatedAtTSI": _format_tsi(),
                 "dataStatus": "partial",
                 "cache": {"hit": False, "ttl_seconds": ttl, "cooldown_remaining_seconds": 0},
-                "providers": {"openrouter": "skipped", "openai": "skipped"},
+                "providers": {"openrouter": "skipped", "gemini": "skipped"},
                 "winner": "single",
                 "consensus": {},
                 "disagreements": {},
@@ -624,7 +629,7 @@ def run_debate(pipeline, base: str, window: str, horizon: str, force: bool = Fal
                 "generatedAtTSI": _format_tsi(),
                 "dataStatus": "partial",
                 "cache": {"hit": False, "ttl_seconds": ttl, "cooldown_remaining_seconds": 0},
-                "providers": {"openrouter": "skipped", "openai": "skipped"},
+                "providers": {"openrouter": "skipped", "gemini": "skipped"},
                 "winner": "single",
                 "consensus": {},
                 "disagreements": {},
@@ -633,7 +638,7 @@ def run_debate(pipeline, base: str, window: str, horizon: str, force: bool = Fal
             }
         _INFLIGHT[inflight_key]["owner"] = True
     prompt = _build_prompt(context_str)
-    providers = {"openrouter": "skipped", "openai": "skipped"}
+    providers = {"openrouter": "skipped", "gemini": "skipped"}
     raw = {}
     notes = [f"context_hash={context_hash}"]
 
@@ -659,29 +664,30 @@ def run_debate(pipeline, base: str, window: str, horizon: str, force: bool = Fal
     if openrouter_data:
         raw["openrouter"] = openrouter_data
 
-    openai_status, openai_data, openai_err = call_openrouter_openai(prompt, provider_timeout, force=force)
-    providers["openai"] = openai_status
-    if openai_err:
-        notes.append(f"openai_error={openai_err}")
-    notes.append(f"openai_model={os.getenv('OPENROUTER_MODEL_SECONDARY', '')}")
-    if openai_data:
-        if isinstance(openai_data, dict) and openai_data.get("_schema_repaired"):
-            notes.append("openai_schema_repaired=true")
-            openai_data.pop("_schema_repaired", None)
-        raw["openai"] = openai_data
+    gemini_model = os.getenv("GEMINI_MODEL_PRIMARY") or os.getenv("GEMINI_MODEL") or "gemini-2.5-flash"
+    gemini_status, gemini_data, gemini_err = call_gemini(prompt, provider_timeout)
+    providers["gemini"] = gemini_status
+    if gemini_err:
+        notes.append(f"gemini_error={gemini_err}")
+    notes.append(f"gemini_model={gemini_model}")
+    if gemini_data:
+        if isinstance(gemini_data, dict) and gemini_data.get("_schema_repaired"):
+            notes.append("gemini_schema_repaired=true")
+            gemini_data.pop("_schema_repaired", None)
+        raw["gemini"] = gemini_data
 
     openrouter_score = _score_output(openrouter_data or {}, context) if openrouter_data else 0
-    openai_score = _score_output(openai_data or {}, context) if openai_data else 0
-    disagreement_score = abs(openrouter_score - openai_score) / max(1, max(openrouter_score, openai_score, 1))
+    gemini_score = _score_output(gemini_data or {}, context) if gemini_data else 0
+    disagreement_score = abs(openrouter_score - gemini_score) / max(1, max(openrouter_score, gemini_score, 1))
     notes.append(f"disagreement_score={disagreement_score:.3f}")
-    disagreement_score = abs(openrouter_score - openai_score) / max(1, max(openrouter_score, openai_score, 1))
+    disagreement_score = abs(openrouter_score - gemini_score) / max(1, max(openrouter_score, gemini_score, 1))
     notes.append(f"disagreement_score={disagreement_score:.3f}")
-    if openrouter_data and openai_data:
-        if abs(openrouter_score - openai_score) < 5:
+    if openrouter_data and gemini_data:
+        if abs(openrouter_score - gemini_score) < 5:
             winner = "tie"
         else:
-            winner = "openrouter" if openrouter_score > openai_score else "openai"
-    elif openrouter_data or openai_data:
+            winner = "openrouter" if openrouter_score > gemini_score else "gemini"
+    elif openrouter_data or gemini_data:
         winner = "single"
     else:
         winner = "single"
@@ -693,22 +699,22 @@ def run_debate(pipeline, base: str, window: str, horizon: str, force: bool = Fal
             "error_code": _map_error_code(openrouter_err),
             "error_message": (openrouter_err or "")[:160],
         },
-        "openai": {
-            "status": openai_status,
-            "model_used": os.getenv("OPENROUTER_MODEL_SECONDARY", ""),
-            "error_code": _map_error_code(openai_err),
-            "error_message": (openai_err or "")[:160],
+        "gemini": {
+            "status": gemini_status,
+            "model_used": gemini_model,
+            "error_code": _map_error_code(gemini_err),
+            "error_message": (gemini_err or "")[:160],
         },
     }
 
     result = {
         "generatedAtTSI": _format_tsi(),
-        "dataStatus": "ok" if (openrouter_data or openai_data) else "partial",
+        "dataStatus": "ok" if (openrouter_data or gemini_data) else "partial",
         "cache": {"hit": False, "ttl_seconds": ttl, "cooldown_remaining_seconds": 0},
         "providers": providers,
         "provider_meta": provider_meta,
         "winner": winner,
-        "consensus": _consensus(openrouter_data, openai_data),
+        "consensus": _consensus(openrouter_data, gemini_data),
         "disagreements": {},
         "raw": raw,
         "debug_notes": notes,
@@ -768,7 +774,7 @@ def run_debate(pipeline, base: str, window: str, horizon: str, force: bool = Fal
 
         should_run = referee_mode.startswith("analyst") or referee_mode == "judge"
         if should_run:
-            ref_ctx = _referee_context(context, openrouter_data or {}, openai_data or {}, base, window, horizon)
+            ref_ctx = _referee_context(context, openrouter_data or {}, gemini_data or {}, base, window, horizon)
             ref_ctx["provider_meta"] = provider_meta
             ref_ctx["mode"] = referee_mode
             if referee_mode == "analyst_single_provider":
@@ -794,7 +800,7 @@ def run_debate(pipeline, base: str, window: str, horizon: str, force: bool = Fal
                 if referee_mode == "judge" and judge.get("winner") in ("provider_a", "provider_b"):
                     result["winner"] = "referee"
                     result["winner_reason"] = "referee_selected"
-                    selected = openrouter_data if judge.get("winner") == "provider_a" else openai_data
+                    selected = openrouter_data if judge.get("winner") == "provider_a" else gemini_data
                     if isinstance(selected, dict):
                         result["consensus"] = dict(selected)
                         result["consensus"]["referee"] = judge

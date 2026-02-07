@@ -33,7 +33,15 @@ def _payload() -> dict:
             {"title": "Oil output cuts extended", "source": "ft.com", "publishedAtISO": "2026-02-06T08:00:00Z"},
         ],
         "localHeadlines": [
-            {"title": "BIST companies release earnings", "source": "kap.org.tr", "publishedAtISO": "2026-02-06T07:00:00Z"}
+            {
+                "title": "BIST companies release earnings",
+                "source": "kap.org.tr",
+                "publishedAtISO": "2026-02-06T07:00:00Z",
+                "tags": ["PORTFOLIO_SYMBOL_MATCH", "EARNINGS_THEME"],
+                "portfolioSymbols": ["ASTOR"],
+                "portfolioSectors": ["UTILITIES"],
+                "relevanceHint": 8,
+            }
         ],
         "relatedNews": {
             "ASTOR": [{"title": "Grid demand rises", "impactScore": 0.2, "direction": "positive"}],
@@ -43,6 +51,21 @@ def _payload() -> dict:
         "holdings_full": [{"symbol": "ASTOR", "weight": 0.3, "asset_class": "BIST", "sector": "UTILITIES"}],
         "recommendations": [],
     }
+
+
+def _good_summary_text() -> str:
+    return (
+        "Haber Temelli Icgoruler\n"
+        "- [KANIT:T1] ASTOR icin siparis akisi toparlanma sinyali veriyor.\n"
+        "- [KANIT:T2] SOKM tarafinda marj baskisi haberi risk olusturuyor.\n\n"
+        "Sektor Etkisi\n"
+        "- UTILITIES tarafinda haber akisina bagli oynaklik artabilir.\n\n"
+        "Portfoy Hisse Etkisi\n"
+        "- ASTOR: kisa vade etki pozitif.\n"
+        "- SOKM: kisa vade etki negatif.\n\n"
+        "Model Fikirleri (Varsayim)\n"
+        "- Model gorusu (ORTA): risk algisi dengelenebilir. (varsayim)\n"
+    )
 
 
 class GeminiClientTests(unittest.TestCase):
@@ -67,7 +90,7 @@ class GeminiClientTests(unittest.TestCase):
             "candidates": [
                 {
                     "content": {
-                        "parts": [{"text": "Haber Temelli Icgoruler\n- [KANIT:T1] not\n\nModel Fikirleri (Varsayim)\n- Model gorusu (ORTA): not"}]
+                        "parts": [{"text": _good_summary_text()}]
                     }
                 }
             ]
@@ -92,7 +115,7 @@ class GeminiClientTests(unittest.TestCase):
                     _FakeResponse(429, text="rate limited"),
                     _FakeResponse(429, text="rate limited"),
                 ]
-                with patch("app.llm.gemini_client._call_openrouter_fallback", return_value=("Fallback text", None)):
+                with patch("app.llm.gemini_client._call_openrouter_fallback", return_value=(_good_summary_text(), None)):
                     summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
                     self.assertIsNotNone(summary)
                     self.assertEqual(err, "fallback_openrouter")
@@ -106,10 +129,7 @@ class GeminiClientTests(unittest.TestCase):
                     "content": {
                         "parts": [
                             {
-                                "text": (
-                                    "Haber Temelli Icgoruler\n- [KANIT:T1] deneme\n\n"
-                                    "Model Fikirleri (Varsayim)\n- Model gorusu (ORTA): deneme"
-                                )
+                                "text": _good_summary_text()
                             }
                         ]
                     }
@@ -141,10 +161,7 @@ class GeminiClientTests(unittest.TestCase):
                     "content": {
                         "parts": [
                             {
-                                "text": (
-                                    "Haber Temelli Icgoruler\n- [KANIT:T1] deneme\n\n"
-                                    "Model Fikirleri (Varsayim)\n- Model gorusu (ORTA): deneme"
-                                )
+                                "text": _good_summary_text()
                             }
                         ]
                     }
@@ -170,13 +187,13 @@ class GeminiClientTests(unittest.TestCase):
     def test_generate_uses_openrouter_after_timeout(self):
         with patch.dict(os.environ, {"GEMINI_API_KEY": "x"}, clear=False):
             with patch("app.llm.gemini_client.requests.post", side_effect=requests.Timeout):
-                with patch("app.llm.gemini_client._call_openrouter_fallback", return_value=("Fallback timeout", None)):
+                with patch("app.llm.gemini_client._call_openrouter_fallback", return_value=(_good_summary_text(), None)):
                     summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
         self.assertIsNotNone(summary)
         self.assertEqual(err, "fallback_openrouter")
         self.assertIn("Model Fikirleri", summary)
 
-    def test_generate_returns_rate_limit_error_when_fallback_fails(self):
+    def test_generate_returns_rule_based_when_fallback_fails(self):
         with patch.dict(os.environ, {"GEMINI_API_KEY": "x"}, clear=False):
             with patch("app.llm.gemini_client.requests.post") as post, patch("app.llm.gemini_client.time.sleep"):
                 post.side_effect = [
@@ -185,8 +202,8 @@ class GeminiClientTests(unittest.TestCase):
                 ]
                 with patch("app.llm.gemini_client._call_openrouter_fallback", return_value=(None, "missing_openrouter_key")):
                     summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
-        self.assertIsNone(summary)
-        self.assertTrue((err or "").startswith("gemini_rate_limited:"))
+        self.assertIsNotNone(summary)
+        self.assertTrue((err or "").startswith("fallback_rule_based:"))
 
     def test_build_prompt_contains_contract_sections(self):
         prepared = gemini_client._prepare_payload(_payload(), budget_chars=5000)
@@ -195,12 +212,58 @@ class GeminiClientTests(unittest.TestCase):
         self.assertIn("Haber Temelli Icgoruler", prompt)
         self.assertIn("Model Fikirleri (Varsayim)", prompt)
         self.assertIn("[KANIT:Tx/Lx]", prompt)
+        self.assertIn("portfolioSymbols", prompt)
+
+    def test_prepare_payload_keeps_local_portfolio_tags(self):
+        prepared = gemini_client._prepare_payload(_payload(), budget_chars=5000)
+        self.assertTrue(prepared["localHeadlines"])
+        row = prepared["localHeadlines"][0]
+        self.assertIn("PORTFOLIO_SYMBOL_MATCH", row.get("tags") or [])
+        self.assertEqual(row.get("portfolioSymbols"), ["ASTOR"])
+        self.assertEqual(row.get("portfolioSectors"), ["UTILITIES"])
+
+    def test_rule_based_summary_uses_local_headline_tags_when_related_missing(self):
+        payload = _payload()
+        payload["relatedNews"] = {}
+        prepared = gemini_client._prepare_payload(payload, budget_chars=5000)
+        text = gemini_client._build_rule_based_summary(prepared)
+        self.assertIn("ASTOR", text)
+        self.assertIn("[KANIT:L1]", text)
 
     def test_generate_returns_missing_key_without_env(self):
         with patch.dict(os.environ, {}, clear=True):
             summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
         self.assertIsNone(summary)
         self.assertEqual(err, "missing_key")
+
+    def test_generate_uses_rule_based_summary_when_model_output_low_quality(self):
+        low_quality = {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [{"text": "Haber Temelli Icgoruler\n- [KANIT:T1] kisa not"}]
+                    }
+                }
+            ]
+        }
+        with patch.dict(os.environ, {"GEMINI_API_KEY": "x"}, clear=False):
+            with patch("app.llm.gemini_client.requests.post") as post:
+                post.side_effect = [
+                    _FakeResponse(200, payload=low_quality),
+                    _FakeResponse(200, payload=low_quality),
+                ]
+                summary, err = gemini_client.generate_portfolio_summary(_payload(), timeout=0.1)
+        self.assertIsNotNone(summary)
+        self.assertTrue((err or "").startswith("fallback_rule_based:"))
+        self.assertIn("Portfoy Hisse Etkisi", summary)
+        self.assertIn("ASTOR", summary)
+
+    def test_build_rule_based_summary_has_sections(self):
+        prepared = gemini_client._prepare_payload(_payload(), budget_chars=5000)
+        text = gemini_client._build_rule_based_summary(prepared)
+        self.assertIn("Haber Temelli Icgoruler", text)
+        self.assertIn("Sektor Etkisi", text)
+        self.assertIn("Model Fikirleri (Varsayim)", text)
 
 
 if __name__ == "__main__":

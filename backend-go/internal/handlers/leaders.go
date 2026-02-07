@@ -30,13 +30,15 @@ func (a *API) Leaders(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := timeboxed(r, a.cfg.RequestTimeout)
 	defer cancel()
-	resp, _ := a.getIntel(ctx, "1h", "6h", nil)
+	resp, _, err := a.intel.GetSnapshot(ctx, "1h", "6h", nil)
 
 	var items []models.NewsItem
-	for _, g := range resp.Leaders {
-		if strings.EqualFold(g.Key, category) {
-			items = g.Items
-			break
+	if err == nil && resp.TsISO != "" {
+		for _, g := range resp.Leaders {
+			if strings.EqualFold(g.Key, category) {
+				items = g.Items
+				break
+			}
 		}
 	}
 	if items == nil {

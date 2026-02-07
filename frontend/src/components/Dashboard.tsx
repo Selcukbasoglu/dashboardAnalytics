@@ -43,6 +43,9 @@ const API_PROXY = "/api";
 const PORTFOLIO_ENABLED =
   (process.env.NEXT_PUBLIC_PORTFOLIO_ENABLED ?? "true").toLowerCase() in
   { "1": true, "true": true, "yes": true, "on": true };
+const PORTFOLIO_DEBATE_ENABLED =
+  (process.env.NEXT_PUBLIC_PORTFOLIO_DEBATE_ENABLED ?? "false").toLowerCase() in
+  { "1": true, "true": true, "yes": true, "on": true };
 type AssetClass = "BIST" | "NASDAQ" | "CRYPTO";
 type DebateOutput = {
   executiveSummary?: string[];
@@ -84,6 +87,7 @@ const ENV_KEYS = [
   "OPENAI_API_KEY",
   "OPENAI_MODEL",
   "ENABLE_OPENAI_SUMMARY",
+  "NEXT_PUBLIC_PORTFOLIO_DEBATE_ENABLED",
   "PY_INTEL_BASE_URL",
   "DATABASE_URL",
   "NEXT_PUBLIC_API_BASE",
@@ -997,12 +1001,14 @@ function OverlayEventChart({
 
 function DebugRow({ debug }: { debug?: DebugInfo }) {
   if (!debug) return null;
+  const uniqueMissing = Array.from(new Set((debug.data_missing ?? []).map((x) => String(x).trim()).filter(Boolean)));
+  const uniqueNotes = Array.from(new Set((debug.notes ?? []).map((x) => String(x).trim()).filter(Boolean)));
   return (
     <div className="flex flex-wrap gap-2 text-xs text-black/50">
-      {debug.data_missing.length > 0 && (
-        <Badge tone="warn">data_missing: {debug.data_missing.join(", ")}</Badge>
+      {uniqueMissing.length > 0 && (
+        <Badge tone="warn">data_missing: {uniqueMissing.join(", ")}</Badge>
       )}
-      {debug.notes.slice(0, 3).map((n, i) => (
+      {uniqueNotes.slice(0, 3).map((n, i) => (
         <Badge key={`${n}-${i}`} className="bg-white/70 text-black/60">
           {n}
         </Badge>
@@ -1131,6 +1137,55 @@ function normalizeWatchlist(raw: string) {
     .join(",");
 }
 
+type PortfolioSummarySection = {
+  key: "evidence" | "sector" | "portfolio" | "outside_pos" | "outside_neg" | "model" | "other";
+  title: string;
+  items: string[];
+};
+
+function parsePortfolioSummary(raw: string): PortfolioSummarySection[] {
+  if (!raw.trim()) return [];
+
+  const sectionRules: Array<{ key: PortfolioSummarySection["key"]; title: string; re: RegExp }> = [
+    { key: "evidence", title: "Haber Temelli Icgoruler", re: /^haber temelli icgoruler/i },
+    { key: "sector", title: "Sektor Etkisi", re: /^sektor etkisi/i },
+    { key: "portfolio", title: "Portfoy Hisse Etkisi", re: /^portfoy hisse etkisi/i },
+    { key: "outside_pos", title: "Portfoy Disi Pozitif Etkiler", re: /^portfoy disi pozitif etkiler/i },
+    { key: "outside_neg", title: "Portfoy Disi Negatif Etkiler", re: /^portfoy disi negatif etkiler/i },
+    { key: "model", title: "Model Fikirleri (Varsayim)", re: /^model fikirleri/i },
+  ];
+  const sections: PortfolioSummarySection[] = [];
+  let current: PortfolioSummarySection | null = null;
+
+  const pushCurrent = () => {
+    if (!current || current.items.length === 0) return;
+    sections.push(current);
+  };
+
+  for (const rawLine of raw.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const cleaned = line.replace(/^[-*•\s]+/, "").replace(/^\d+\)\s*/, "").trim();
+    if (!cleaned) continue;
+
+    if (/^portfoy ve haber analizi/i.test(cleaned)) continue;
+
+    const match = sectionRules.find((r) => r.re.test(cleaned));
+    if (match) {
+      pushCurrent();
+      current = { key: match.key, title: match.title, items: [] };
+      continue;
+    }
+
+    if (!current) {
+      current = { key: "other", title: "Diger", items: [] };
+    }
+    current.items.push(cleaned);
+  }
+  pushCurrent();
+  return sections.filter((s) => s.items.length > 0);
+}
+
 export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -1158,7 +1213,8 @@ export default function Dashboard() {
   const [portfolioPeriod, setPortfolioPeriod] = useState<"daily" | "weekly" | "monthly">("daily");
   const [portfolioClassFilter, setPortfolioClassFilter] = useState<"ALL" | AssetClass>("ALL");
   const [portfolioDirectOnly, setPortfolioDirectOnly] = useState(false);
-  const [portfolioRightTab, setPortfolioRightTab] = useState<"insights" | "optimizer">("insights");
+  const [portfolioRightTab, setPortfolioRightTab] = useState<"summary" | "actions">("summary");
+  const [showDebatePanel, setShowDebatePanel] = useState(false);
   const [debateInsights, setDebateInsights] = useState<DebateOutput | null>(null);
   const [debateMeta, setDebateMeta] = useState<DebateResponse | null>(null);
   const [debateLoading, setDebateLoading] = useState(false);
@@ -1194,13 +1250,10 @@ export default function Dashboard() {
   const insights = buildRuleInsights(market, intel?.top_news ?? [], flow, risk, intel?.debug?.notes ?? []);
   const totalMcapUsd = market?.coingecko?.total_mcap_usd ?? null;
   const holdingsList = portfolio?.holdings ?? [];
-  const portfolioSummaryLines = useMemo(() => {
-    const raw = portfolio?.portfolioSummary?.summary ?? "";
-    return raw
-      .split("\n")
-      .map((line) => line.replace(/^[-*•\s]+/, "").trim())
-      .filter(Boolean);
-  }, [portfolio?.portfolioSummary?.summary]);
+  const portfolioSummarySections = useMemo(
+    () => parsePortfolioSummary(portfolio?.portfolioSummary?.summary ?? ""),
+    [portfolio?.portfolioSummary?.summary]
+  );
   const geminiNewsTitlesSent = portfolio?.portfolioSummary?.meta?.news_titles_sent ?? null;
   const geminiLocalTitlesSent = portfolio?.portfolioSummary?.meta?.local_titles_sent ?? null;
   const geminiTotalTitlesSent = portfolio?.portfolioSummary?.meta?.news_titles_sent_total ?? null;
@@ -1355,6 +1408,16 @@ export default function Dashboard() {
         cls: getAssetClass(symbol, symbolToHolding[symbol]),
       }));
   }, [perSymbolImpact, symbolToHolding]);
+  const activeRecommendation = useMemo(
+    () => (portfolio?.recommendations ?? []).find((r) => r.period === portfolioPeriod) ?? null,
+    [portfolio?.recommendations, portfolioPeriod]
+  );
+  const holdReason =
+    activeRecommendation?.mode === "HOLD"
+      ? activeRecommendation?.hold_reason ?? activeRecommendation?.notes?.[0] ?? null
+      : null;
+  const coverageMatched = portfolio?.newsImpact?.coverage?.matched ?? visibleNewsItems.length;
+  const coverageTotal = portfolio?.newsImpact?.coverage?.total ?? rawNewsItems.length;
 
   useEffect(() => {
     if (market?.coingecko?.dominance) {
@@ -1673,8 +1736,9 @@ export default function Dashboard() {
   }, [portfolioBase, portfolioHorizon]);
 
   useEffect(() => {
+    if (!PORTFOLIO_DEBATE_ENABLED || !showDebatePanel) return;
     fetchDebateCache().catch(() => null);
-  }, [portfolioBase, portfolioHorizon, portfolioPeriod]);
+  }, [portfolioBase, portfolioHorizon, portfolioPeriod, showDebatePanel]);
 
   useEffect(() => {
     let es: EventSource | null = null;
@@ -2427,30 +2491,37 @@ export default function Dashboard() {
             title="Optimizasyon Onerileri"
             right={
               <div className="flex items-center gap-2 text-xs">
-                {(["insights", "optimizer"] as const).map((v) => (
+                {(
+                  [
+                    { key: "summary", label: "Summary" },
+                    { key: "actions", label: "Actions" },
+                  ] as const
+                ).map((tab) => (
                   <button
-                    key={`tab-${v}`}
-                    onClick={() => setPortfolioRightTab(v)}
+                    key={`tab-${tab.key}`}
+                    onClick={() => setPortfolioRightTab(tab.key)}
                     className={cx(
-                      "rounded-full border px-2 py-0.5",
-                      portfolioRightTab === v ? "border-black/60 bg-black/5 text-black" : "border-black/10 text-black/60"
+                      "rounded-full border px-2 py-0.5 text-xs",
+                      portfolioRightTab === tab.key
+                        ? "border-black/60 bg-black/5 text-black"
+                        : "border-black/10 text-black/60"
                     )}
                   >
-                    {v}
+                    {tab.label}
                   </button>
                 ))}
               </div>
             }
           >
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div className="space-y-4 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {(["daily", "weekly", "monthly"] as const).map((v) => (
                     <button
                       key={`per-${v}`}
                       onClick={() => setPortfolioPeriod(v)}
                       className={cx(
-                        "rounded-full border px-2 py-0.5",
+                        "rounded-full border px-3 py-1 text-xs",
                         portfolioPeriod === v ? "border-black/60 bg-black/5 text-black" : "border-black/10"
                       )}
                     >
@@ -2458,189 +2529,54 @@ export default function Dashboard() {
                     </button>
                   ))}
                 </div>
-                <span className="text-[11px] text-black/50">{debateWindow}</span>
+                <span className="rounded-full border border-black/10 bg-black/5 px-2 py-0.5 text-xs text-black/60">{debateWindow}</span>
               </div>
-              {portfolioRightTab === "insights" ? (
-                <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between gap-2">
-                    <button
-                      onClick={() => requestDebate().catch(() => null)}
-                      className={cx(
-                        "rounded-full border px-3 py-1 text-[11px]",
-                        debateLoading ? "border-black/10 text-black/40" : "border-black/50 bg-black/5 text-black"
-                      )}
-                      disabled={debateLoading}
-                    >
-                      Debate
-                    </button>
-                    {debateMeta?.cache?.cooldown_remaining_seconds ? (
-                      <span className="text-[10px] text-black/50">
-                        {debateMeta.cache.cooldown_remaining_seconds}s cooldown
-                      </span>
-                    ) : null}
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2">
+                  <div className="text-[11px] uppercase tracking-wide text-black/45">Mode</div>
+                  <div className="mt-1 text-sm font-semibold text-black">{activeRecommendation?.mode ?? "ACTIVE"}</div>
+                </div>
+                <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2">
+                  <div className="text-[11px] uppercase tracking-wide text-black/45">Coverage</div>
+                  <div className="mt-1 text-sm font-semibold text-black">
+                    {coverageMatched}/{coverageTotal}
                   </div>
-                  {debateMeta?.providers ? (
-                    <div className="text-[10px] text-black/45">
-                      openrouter: {debateMeta.providers.openrouter ?? "—"} · openai: {debateMeta.providers.openai ?? "—"}
+                </div>
+                <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2">
+                  <div className="text-[11px] uppercase tracking-wide text-black/45">Actions</div>
+                  <div className="mt-1 text-sm font-semibold text-black">{activeRecommendation?.actions?.length ?? 0}</div>
+                </div>
+              </div>
+
+              {portfolioRightTab === "summary" ? (
+                <div className="space-y-3">
+                  {holdReason ? (
+                    <div className="rounded-xl border border-amber-300/70 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                      HOLD nedeni: {holdReason}
                     </div>
                   ) : null}
-                  {debateLoading ? <div className="text-xs text-black/50">Yukleniyor...</div> : null}
-                  {!debateLoading && debateInsights ? (
-                    <>
-                      <div className="space-y-3">
-                        <div className="text-[11px] uppercase tracking-wide text-black/40">Debate</div>
-                        <div className="grid gap-2">
-                          {(["openrouter", "openai"] as const).map((key) => {
-                            const plan = debateMeta?.raw?.[key];
-                            const model =
-                              key === "openrouter"
-                                ? getDebugValue(debateMeta?.debug_notes, "openrouter_model")
-                                : getDebugValue(debateMeta?.debug_notes, "openai_model");
-                            const title = model || key;
-                            const error =
-                              key === "openrouter"
-                                ? getDebugValue(debateMeta?.debug_notes, "openrouter_error")
-                                : getDebugValue(debateMeta?.debug_notes, "openai_error");
-                            const metaError =
-                              key === "openrouter"
-                                ? debateMeta?.provider_meta?.openrouter?.error_message
-                                : debateMeta?.provider_meta?.openai?.error_message;
-                            return (
-                              <div key={`debate-${key}`} className="rounded-xl border border-black/10 bg-white/70 px-3 py-2">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[11px] font-semibold text-black">{title}</span>
-                                  <span className="text-[10px] text-black/50">{debateMeta?.providers?.[key] ?? "—"}</span>
-                                </div>
-                                {plan?.executiveSummary?.length ? (
-                                  <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-black/60">
-                                    {plan.executiveSummary.slice(0, 3).map((line, idx) => (
-                                      <li key={`debate-${key}-s-${idx}`}>{line}</li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <div className="mt-1 text-[10px] text-black/40">
-                                    no response{metaError ? ` · ${metaError}` : error ? ` · ${error}` : ""}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="text-[11px] uppercase tracking-wide text-black/40">Hakem</div>
-                        <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-semibold text-black">Referee</span>
-                            <span className="text-[10px] text-black/50">{debateMeta?.referee?.status ?? "—"}</span>
-                          </div>
-                          {debateMeta?.referee?.result ? (
-                            <div className="mt-1 space-y-1 text-[11px] text-black/60">
-                              <div className="flex items-center justify-between">
-                                <span>winner</span>
-                                <span className="font-semibold text-black">{debateMeta.referee.result.winner ?? "—"}</span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span>confidence</span>
-                                <span>{debateMeta.referee.result.confidence ?? "—"}</span>
-                              </div>
-                              {Array.isArray(debateMeta.referee.result.why) ? (
-                                <ul className="list-disc space-y-0.5 pl-4 text-[11px] text-black/55">
-                                  {debateMeta.referee.result.why.slice(0, 3).map((w: any, idx: number) => (
-                                    <li key={`ref-why-${idx}`}>{w?.text ?? ""}</li>
-                                  ))}
-                                </ul>
-                              ) : null}
-                              {debateMeta.referee.result.contrarian_idea?.text ? (
-                                <div className="text-[10px] text-black/50">
-                                  contrarian: {debateMeta.referee.result.contrarian_idea.text}
-                                </div>
-                              ) : null}
+                  {portfolioSummarySections.length ? (
+                    <div className="space-y-2">
+                      <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2">
+                        <div className="text-[11px] uppercase tracking-wide text-black/40">Gemini Ozeti</div>
+                        <div className="mt-2 grid gap-2">
+                          {portfolioSummarySections.slice(0, 6).map((section) => (
+                            <div key={`summary-sec-${section.key}-${section.title}`} className="rounded-xl border border-black/10 bg-white/85 px-3 py-2">
+                              <div className="text-xs font-semibold uppercase tracking-wide text-black/45">{section.title}</div>
+                              <ul className="mt-1 list-disc space-y-1 pl-4 text-sm text-black/70">
+                                {section.items.slice(0, 3).map((line, idx) => (
+                                  <li key={`summary-item-${section.key}-${idx}`}>{line}</li>
+                                ))}
+                              </ul>
                             </div>
-                          ) : (
-                            <div className="mt-1 text-[10px] text-black/40">
-                              {debateMeta?.referee?.error ? `error: ${debateMeta.referee.error}` : "—"}
-                            </div>
-                          )}
+                          ))}
                         </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] uppercase tracking-wide text-black/40">Conclusion</span>
-                          <Badge tone="info">{debateMeta?.winner ?? "—"}</Badge>
+                        <div className="mt-3 text-xs text-black/50">
+                          Geminiye giden baslik sayisi (top/local/toplam):{" "}
+                          {typeof geminiNewsTitlesSent === "number" ? geminiNewsTitlesSent : "—"}/
+                          {typeof geminiLocalTitlesSent === "number" ? geminiLocalTitlesSent : "—"}/
+                          {typeof geminiTotalTitlesSent === "number" ? geminiTotalTitlesSent : "—"}
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] uppercase tracking-wide text-black/40">Mode</span>
-                          <Badge tone="info">{debateInsights.portfolioMode ?? "—"}</Badge>
-                        </div>
-                        {debateInsights.executiveSummary?.length ? (
-                          <ul className="list-disc space-y-1 pl-4 text-[11px] text-black/65">
-                            {debateInsights.executiveSummary.slice(0, 5).map((line, idx) => (
-                              <li key={`conclusion-s-${idx}`}>{line}</li>
-                            ))}
-                          </ul>
-                        ) : null}
-                        {(debateInsights.actions?.length || debateInsights.trimSignals?.length) ? (
-                          <div className="space-y-2">
-                            <div className="text-[11px] uppercase tracking-wide text-black/40">Signals</div>
-                            {(debateInsights.actions?.length
-                              ? debateInsights.actions.slice(0, 5).map((a) => ({
-                                  symbol: a.symbol,
-                                  action: a.action,
-                                  reason: a.reason,
-                                  deltaWeight: undefined,
-                                }))
-                              : debateInsights.trimSignals?.slice(0, 5).map((t) => ({
-                                  symbol: t.symbol,
-                                  action: t.action ?? "trim",
-                                  reason: t.evidence_ids?.join(" · "),
-                                  deltaWeight: t.deltaWeight,
-                                })) ?? []
-                            ).map((a, idx) => {
-                              const cls = a.symbol ? getAssetClass(a.symbol, symbolToHolding[a.symbol]) : "NASDAQ";
-                              const reason = Array.isArray(a.reason) ? a.reason.join(" · ") : a.reason;
-                              return (
-                                <div key={`conclusion-act-${idx}`} className="rounded-xl border border-black/10 bg-white/70 px-3 py-2">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                      {a.symbol ? <Badge tone={assetClassTone(cls)}>{`${cls}: ${a.symbol}`}</Badge> : null}
-                                      <span className="font-semibold text-black">{a.action ?? "—"}</span>
-                                    </div>
-                                    <span className="text-[10px] text-black/50">
-                                      {reason ?? ""}
-                                      {typeof a.deltaWeight === "number" ? ` · ${formatPercent(a.deltaWeight * 100, 2)}` : ""}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : null}
-                        <div className="text-[11px] text-black/50">{debateInsights.note ?? "Sinyal; yatirim tavsiyesi degildir."}</div>
-                      </div>
-                    </>
-                  ) : null}
-                  {!debateLoading && !debateInsights ? (
-                    <div className="text-xs text-black/50">{debateError ?? "OpenRouter içgörüleri devre dışı / veri eksik"}</div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="space-y-2 text-xs">
-                  {portfolioSummaryLines.length ? (
-                    <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2">
-                      <div className="text-[11px] uppercase tracking-wide text-black/40">Gemini Ozeti</div>
-                      <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-black/60">
-                        {portfolioSummaryLines.slice(0, 6).map((line, idx) => (
-                          <li key={`gemini-summary-${idx}`}>{line}</li>
-                        ))}
-                      </ul>
-                      <div className="mt-2 text-[11px] text-black/45">
-                        Geminiye giden baslik sayisi (top/local/toplam):{" "}
-                        {typeof geminiNewsTitlesSent === "number" ? geminiNewsTitlesSent : "—"}/
-                        {typeof geminiLocalTitlesSent === "number" ? geminiLocalTitlesSent : "—"}/
-                        {typeof geminiTotalTitlesSent === "number" ? geminiTotalTitlesSent : "—"}
                       </div>
                     </div>
                   ) : (
@@ -2649,10 +2585,147 @@ export default function Dashboard() {
                       {portfolio?.portfolioSummary?.error ? `: ${portfolio.portfolioSummary.error}` : "."}
                     </div>
                   )}
-                  <div className="text-[11px] text-black/50">Yatirim tavsiyesi degildir.</div>
-                  {(portfolio?.recommendations ?? [])
-                    .filter((r) => r.period === portfolioPeriod)
-                    .flatMap((r) => r.actions)
+
+                  {PORTFOLIO_DEBATE_ENABLED ? (
+                    <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <button
+                          onClick={() => setShowDebatePanel((prev) => !prev)}
+                          className="rounded-full border border-black/20 px-3 py-1 text-xs text-black/70"
+                        >
+                          {showDebatePanel ? "Debate gizle" : "Debate ac"}
+                        </button>
+                        <button
+                          onClick={() => requestDebate().catch(() => null)}
+                          className={cx(
+                            "rounded-full border px-3 py-1 text-xs",
+                            !showDebatePanel || debateLoading
+                              ? "border-black/10 text-black/40"
+                              : "border-black/40 bg-black/5 text-black"
+                          )}
+                          disabled={!showDebatePanel || debateLoading}
+                        >
+                          {debateLoading ? "Yukleniyor..." : "Debate yenile"}
+                        </button>
+                      </div>
+                      <div className="mt-2 text-xs text-black/55">
+                        Debate, OpenRouter ve OpenAI ciktilarini hakem modeliyle karsilastirir; varsayimlari ayrik gosterir.
+                      </div>
+
+                      {showDebatePanel ? (
+                        <div className="mt-3 space-y-3">
+                          {!debateLoading && debateInsights ? (
+                            <>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge tone="info">winner: {debateMeta?.winner ?? "—"}</Badge>
+                                <Badge tone="info">mode: {debateInsights.portfolioMode ?? "—"}</Badge>
+                                {debateMeta?.cache?.cooldown_remaining_seconds ? (
+                                  <span className="text-xs text-black/50">
+                                    {debateMeta.cache.cooldown_remaining_seconds}s cooldown
+                                  </span>
+                                ) : null}
+                              </div>
+                              {debateInsights.executiveSummary?.length ? (
+                                <ul className="list-disc space-y-1 pl-4 text-sm text-black/70">
+                                  {debateInsights.executiveSummary.slice(0, 5).map((line, idx) => (
+                                    <li key={`conclusion-s-${idx}`}>{line}</li>
+                                  ))}
+                                </ul>
+                              ) : null}
+                              {(debateInsights.actions?.length || debateInsights.trimSignals?.length) ? (
+                                <div className="space-y-2">
+                                  <div className="text-xs uppercase tracking-wide text-black/45">Signals</div>
+                                  {(debateInsights.actions?.length
+                                    ? debateInsights.actions.slice(0, 4).map((a) => ({
+                                        symbol: a.symbol,
+                                        action: a.action,
+                                        reason: a.reason,
+                                        deltaWeight: undefined,
+                                      }))
+                                    : debateInsights.trimSignals?.slice(0, 4).map((t) => ({
+                                        symbol: t.symbol,
+                                        action: t.action ?? "trim",
+                                        reason: t.evidence_ids?.join(" · "),
+                                        deltaWeight: t.deltaWeight,
+                                      })) ?? []
+                                  ).map((a, idx) => {
+                                    const cls = a.symbol ? getAssetClass(a.symbol, symbolToHolding[a.symbol]) : "NASDAQ";
+                                    const reason = Array.isArray(a.reason) ? a.reason.join(" · ") : a.reason;
+                                    return (
+                                      <div
+                                        key={`conclusion-act-${idx}`}
+                                        className="rounded-xl border border-black/10 bg-white/80 px-3 py-2"
+                                      >
+                                        <div className="flex flex-wrap items-center justify-between gap-2">
+                                          <div className="flex items-center gap-2">
+                                            {a.symbol ? <Badge tone={assetClassTone(cls)}>{`${cls}: ${a.symbol}`}</Badge> : null}
+                                            <span className="text-sm font-semibold text-black">{a.action ?? "—"}</span>
+                                          </div>
+                                          <span className="text-xs text-black/50">
+                                            {reason ?? ""}
+                                            {typeof a.deltaWeight === "number" ? ` · ${formatPercent(a.deltaWeight * 100, 2)}` : ""}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              ) : null}
+                              <details className="rounded-xl border border-black/10 bg-white/80 px-3 py-2">
+                                <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wide text-black/50">
+                                  Provider detaylari
+                                </summary>
+                                <div className="mt-2 grid gap-2">
+                                  {(["openrouter", "openai"] as const).map((key) => {
+                                    const plan = debateMeta?.raw?.[key];
+                                    const model =
+                                      key === "openrouter"
+                                        ? getDebugValue(debateMeta?.debug_notes, "openrouter_model")
+                                        : getDebugValue(debateMeta?.debug_notes, "openai_model");
+                                    const error =
+                                      key === "openrouter"
+                                        ? getDebugValue(debateMeta?.debug_notes, "openrouter_error")
+                                        : getDebugValue(debateMeta?.debug_notes, "openai_error");
+                                    const metaError =
+                                      key === "openrouter"
+                                        ? debateMeta?.provider_meta?.openrouter?.error_message
+                                        : debateMeta?.provider_meta?.openai?.error_message;
+                                    return (
+                                      <div key={`debate-${key}`} className="rounded-xl border border-black/10 bg-white px-3 py-2">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-xs font-semibold text-black">{model || key}</span>
+                                          <span className="text-xs text-black/50">{debateMeta?.providers?.[key] ?? "—"}</span>
+                                        </div>
+                                        {plan?.executiveSummary?.length ? (
+                                          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-black/65">
+                                            {plan.executiveSummary.slice(0, 3).map((line, idx) => (
+                                              <li key={`debate-${key}-s-${idx}`}>{line}</li>
+                                            ))}
+                                          </ul>
+                                        ) : (
+                                          <div className="mt-1 text-xs text-black/45">
+                                            no response{metaError ? ` · ${metaError}` : error ? ` · ${error}` : ""}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </details>
+                            </>
+                          ) : null}
+                          {!debateLoading && !debateInsights ? (
+                            <div className="text-xs text-black/50">{debateError ?? "Debate verisi yok."}</div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="text-xs text-black/55">Yatirim tavsiyesi degildir.</div>
+                  {(activeRecommendation?.actions ?? [])
                     .slice(0, 6)
                     .map((a, idx) => {
                       const cls = getAssetClass(a.symbol, symbolToHolding[a.symbol]);
@@ -2661,11 +2734,11 @@ export default function Dashboard() {
                           key={`rec-${idx}`}
                           className="flex items-center justify-between rounded-xl border border-black/10 bg-white/70 px-3 py-2"
                         >
-                          <div className="flex flex-col">
-                            <span className="font-semibold text-black">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-semibold text-black">
                               {a.symbol} · {a.action}
                             </span>
-                            <span className="text-[10px] text-black/55">{a.reason.join(" | ")}</span>
+                            <span className="text-xs text-black/55">{a.reason.join(" | ")}</span>
                             <div className="mt-1">
                               <Badge tone={assetClassTone(cls)}>{cls}</Badge>
                             </div>
@@ -2677,7 +2750,12 @@ export default function Dashboard() {
                         </div>
                       );
                     })}
-                  {!portfolio?.recommendations?.length ? (
+                  {activeRecommendation?.notes?.length ? (
+                    <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-xs text-black/55">
+                      Not: {activeRecommendation.notes.slice(0, 2).join(" · ")}
+                    </div>
+                  ) : null}
+                  {!activeRecommendation?.actions?.length ? (
                     <div className="text-xs text-black/50">Oneri yok (veri eksik olabilir).</div>
                   ) : null}
                 </div>

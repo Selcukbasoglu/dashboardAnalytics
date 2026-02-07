@@ -240,6 +240,9 @@ export type EventClusterView = {
 export type EventClusterResponse = {
   last_scan_ts?: string | null;
   clusters: EventClusterView[];
+  data_status?: string;
+  fetched_at?: string;
+  stale_reason?: string;
 };
 
 export type LeadersPageResponse = {
@@ -470,6 +473,31 @@ export type PortfolioResponse = {
   newsImpact: {
     horizon: "24h" | "7d" | "30d";
     items: PortfolioNewsImpactItem[];
+    relatedNews?: Record<
+      string,
+      Array<{
+        title: string | null;
+        url: string | null;
+        publishedAtISO: string | null;
+        direction?: "positive" | "negative" | "neutral";
+        impactScore?: number;
+        low_signal?: boolean;
+      }>
+    >;
+    headlines?: Array<{
+      title: string;
+      source?: string | null;
+      publishedAtISO?: string | null;
+      url?: string | null;
+    }>;
+    headline_count?: number;
+    local_headlines?: Array<{
+      title: string;
+      source?: string | null;
+      publishedAtISO?: string | null;
+      url?: string | null;
+    }>;
+    local_headline_count?: number;
     summary: {
       impact_by_symbol: Record<string, number>;
       impact_by_symbol_direct?: Record<string, number>;

@@ -413,6 +413,13 @@ def compute_news_impact(
         if not matches:
             continue
 
+        direct_symbols = {m.get("symbol") for m in matches if m.get("method") in direct_methods}
+        if direct_symbols:
+            tags = {t for t in (item.tags or []) if t}
+            tags.add("PORTFOLIO_SYMBOL_MATCH")
+            tags.add("PORTFOLIO_NEWS")
+            item.tags = sorted(tags)
+
         w_base = (item.relevance_score or item.score or 0) / 100.0
         w_base *= (item.quality_score or 0) / 100.0
         w = w_base * recency_weight(item.publishedAtISO)
@@ -544,6 +551,120 @@ def compact_related_news_for_llm(
         if out:
             compact[symbol] = out
     return compact
+
+
+LOCAL_THEME_PATTERNS: dict[str, tuple[str, ...]] = {
+    "BIST_MARKET_THEME": ("borsa", "bist", "hisse", "viop", "endeks"),
+    "HALKA_ARZ_THEME": ("halka arz", "ipo", "talep toplama"),
+    "REGULATORY_THEME": ("spk", "kap", "tedbir", "yasak", "aciga satis", "kredili islem"),
+    "EARNINGS_THEME": ("bilanco", "kar", "finansal sonuc", "ceyrek"),
+    "MACRO_THEME": ("faiz", "enflasyon", "dolar", "kur", "tcmb", "fed", "tahvil", "swap"),
+}
+
+SECTOR_KEYWORD_HINTS: dict[str, tuple[str, ...]] = {
+    "ENERGY": ("enerji", "petrol", "rafineri", "dogalgaz", "akaryakit"),
+    "POWER_UTILITIES": ("enerji", "elektrik", "dagitim", "utility", "santral"),
+    "CONSUMER_RETAIL": ("perakende", "market", "tuketim", "gida", "magaza"),
+    "INDUSTRIALS": ("sanayi", "uretim", "fabrika", "ihracat", "otomotiv"),
+    "SEMICONDUCTORS": ("chip", "semiconductor", "yariletken", "gpu", "mikrocip"),
+    "SOFTWARE": ("yazilim", "software", "saas", "platform", "bulut"),
+    "METALS_MINERS": ("altin", "gumus", "maden", "bakir", "metal"),
+    "CRYPTO": ("bitcoin", "kripto", "blockchain", "btc", "ethereum"),
+}
+
+
+def _theme_tags_from_title(title: str) -> list[str]:
+    norm = normalize(title)
+    tags: list[str] = []
+    for tag, patterns in LOCAL_THEME_PATTERNS.items():
+        if any(p in norm for p in patterns):
+            tags.append(tag)
+    return tags
+
+
+def _sector_hints_from_title(title: str, portfolio_sectors: set[str]) -> set[str]:
+    norm = normalize(title)
+    hits: set[str] = set()
+    for sector in portfolio_sectors:
+        if not sector:
+            continue
+        patterns = SECTOR_KEYWORD_HINTS.get(sector)
+        if patterns and any(p in norm for p in patterns):
+            hits.add(sector)
+    return hits
+
+
+def build_local_headlines_for_llm(local_news: list[NewsItem], alias_map: dict, holdings: list[dict]) -> list[dict]:
+    portfolio_symbols = {(h.get("symbol") or "").upper() for h in holdings if h.get("symbol")}
+    holding_sector_map = {(h.get("symbol") or "").upper(): (h.get("sector") or "").upper() for h in holdings if h.get("symbol")}
+    holding_class_map = {(h.get("symbol") or "").upper(): (h.get("asset_class") or "").upper() for h in holdings if h.get("symbol")}
+    symbol_meta = alias_map.get("symbols", {}) or {}
+    symbol_to_sector: dict[str, str] = {}
+    symbol_to_class: dict[str, str] = {}
+    for sym in portfolio_symbols:
+        meta = symbol_meta.get(sym) or {}
+        symbol_to_sector[sym] = ((meta.get("sector") or holding_sector_map.get(sym) or "")).upper()
+        symbol_to_class[sym] = ((meta.get("asset_class") or holding_class_map.get(sym) or "")).upper()
+    portfolio_sector_pool = {sec for sec in symbol_to_sector.values() if sec}
+    portfolio_bist_sectors = sorted({symbol_to_sector.get(sym, "") for sym in portfolio_symbols if symbol_to_class.get(sym) == "BIST" and symbol_to_sector.get(sym, "")})
+
+    rows: list[dict] = []
+    for item in local_news:
+        matches, _ = match_news_item(item, alias_map)
+        matched_symbols = sorted({m.get("symbol") for m in matches if (m.get("symbol") or "").upper() in portfolio_symbols})
+        matched_sectors = sorted({symbol_to_sector.get(sym, "") for sym in matched_symbols if symbol_to_sector.get(sym, "")})
+        matched_sectors = sorted(set(matched_sectors).union(_sector_hints_from_title(item.title or "", portfolio_sector_pool)))
+        tags: set[str] = {t for t in (item.tags or []) if t}
+        tags.add("LOCAL_TR_HEADLINE")
+        if item.source in {"ekonomim.com", "dunya.com", "paraanaliz.com"}:
+            tags.add("LOCAL_SCRAPE")
+        if item.source == "kap.org.tr":
+            tags.add("KAP_DISCLOSURE")
+        theme_tags = _theme_tags_from_title(item.title or "")
+        tags.update(theme_tags)
+        if ("BIST_MARKET_THEME" in tags) and (not matched_sectors) and portfolio_bist_sectors:
+            matched_sectors = portfolio_bist_sectors[:2]
+        if matched_symbols:
+            tags.add("PORTFOLIO_SYMBOL_MATCH")
+            tags.add("PORTFOLIO_NEWS")
+        if matched_sectors:
+            tags.add("PORTFOLIO_SECTOR_MATCH")
+        if any(symbol_to_class.get(sym) == "BIST" for sym in matched_symbols):
+            tags.add("BIST_SYMBOL_MATCH")
+
+        relevance_hint = 0
+        relevance_hint += len(matched_symbols) * 4
+        relevance_hint += len(matched_sectors) * 2
+        if "PORTFOLIO_SYMBOL_MATCH" in tags:
+            relevance_hint += 3
+        if "PORTFOLIO_SECTOR_MATCH" in tags:
+            relevance_hint += 2
+        if "HALKA_ARZ_THEME" in tags or "EARNINGS_THEME" in tags:
+            relevance_hint += 1
+
+        item.tags = sorted(tags)
+        rows.append(
+            {
+                "title": item.title,
+                "source": item.source,
+                "publishedAtISO": item.publishedAtISO,
+                "url": item.url,
+                "tags": item.tags,
+                "portfolioSymbols": matched_symbols[:6],
+                "portfolioSectors": matched_sectors[:4],
+                "relevanceHint": relevance_hint,
+            }
+        )
+
+    rows.sort(
+        key=lambda r: (
+            int(r.get("relevanceHint") or 0),
+            len(r.get("portfolioSymbols") or []),
+            len(r.get("portfolioSectors") or []),
+        ),
+        reverse=True,
+    )
+    return rows
 
 
 def fetch_price(symbol: str) -> tuple[float | None, str, str | None]:
@@ -994,6 +1115,7 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
                 local_news_debug_notes.extend(local_notes)
             if local_counts:
                 local_news_debug_notes.append(f"portfolio_local_news_tr={local_counts.get('tr', 0)}")
+                local_news_debug_notes.append(f"portfolio_local_news_tr_scrape={local_counts.get('tr_scrape', 0)}")
             if getattr(pipeline, "cache", None) is not None:
                 try:
                     pipeline.cache.set(
@@ -1123,15 +1245,7 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
         }
         for n in top_news
     ]
-    local_headlines = [
-        {
-            "title": n.title,
-            "source": n.source,
-            "publishedAtISO": n.publishedAtISO,
-            "url": n.url,
-        }
-        for n in local_news
-    ]
+    local_headlines = build_local_headlines_for_llm(local_news, alias_map, holdings)
     local_headlines_brief = local_headlines[:local_news_limit]
     top_titles_sent = len(top_news_brief)
     local_titles_sent = len(local_headlines_brief)

@@ -50,6 +50,46 @@ def _payload() -> dict:
         "holdings": [{"symbol": "ASTOR", "weight": 0.3, "asset_class": "BIST", "sector": "UTILITIES"}],
         "holdings_full": [{"symbol": "ASTOR", "weight": 0.3, "asset_class": "BIST", "sector": "UTILITIES"}],
         "recommendations": [],
+        "announcementTracker": {
+            "portfolio_upcoming": [
+                {
+                    "symbol": "ASTOR",
+                    "sector": "UTILITIES",
+                    "event_type": "EARNINGS",
+                    "eta_days": 2,
+                    "match_scope": "fund_constituent",
+                    "related_constituents": [{"symbol": "PAAS", "company": "Pan American Silver"}],
+                    "headline": "Astor Enerji yarin bilanco aciklayacak",
+                    "source": "kap.org.tr",
+                }
+            ],
+            "sector_ceo_statements": [
+                {
+                    "sector": "SEMICONDUCTORS",
+                    "company": "NVIDIA",
+                    "ceo": "Jensen Huang",
+                    "stance": "positive",
+                    "signal_score": 0.7,
+                    "linked_symbols": ["ASTOR"],
+                    "headline": "NVIDIA CEO Jensen Huang says AI demand remains strong",
+                    "source": "reuters.com",
+                }
+            ],
+            "summary": {"upcoming_count": 1, "ceo_statement_count": 1},
+        },
+        "newsPricingModel": {
+            "market_pressure_score": 0.12,
+            "market_regime": "BULLISH_PRICING",
+            "symbol_pricing": [
+                {
+                    "symbol": "ASTOR",
+                    "pressure_score": 0.3,
+                    "state": "UNDERPRICED",
+                    "expected_move_pct_24h": 0.22,
+                    "confidence": 71,
+                }
+            ],
+        },
     }
 
 
@@ -213,6 +253,8 @@ class GeminiClientTests(unittest.TestCase):
         self.assertIn("Model Fikirleri (Varsayim)", prompt)
         self.assertIn("[KANIT:Tx/Lx]", prompt)
         self.assertIn("portfolioSymbols", prompt)
+        self.assertIn("announcementTracker", prompt)
+        self.assertIn("newsPricingModel", prompt)
 
     def test_prepare_payload_keeps_local_portfolio_tags(self):
         prepared = gemini_client._prepare_payload(_payload(), budget_chars=5000)
@@ -221,6 +263,16 @@ class GeminiClientTests(unittest.TestCase):
         self.assertIn("PORTFOLIO_SYMBOL_MATCH", row.get("tags") or [])
         self.assertEqual(row.get("portfolioSymbols"), ["ASTOR"])
         self.assertEqual(row.get("portfolioSectors"), ["UTILITIES"])
+
+    def test_prepare_payload_keeps_tracker_fund_constituent_signals(self):
+        prepared = gemini_client._prepare_payload(_payload(), budget_chars=5000)
+        tracker = prepared.get("announcementTracker") or {}
+        rows = tracker.get("portfolio_upcoming") or []
+        self.assertTrue(rows)
+        row = rows[0]
+        self.assertEqual(row.get("match_scope"), "fund_constituent")
+        related = row.get("related_constituents") or []
+        self.assertTrue(any((x.get("symbol") == "PAAS") for x in related))
 
     def test_rule_based_summary_uses_local_headline_tags_when_related_missing(self):
         payload = _payload()

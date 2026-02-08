@@ -24,6 +24,7 @@ class DummyPipeline:
         self.cache = cache
         self._top_news = top_news or []
         self.run_called = False
+        self.db = SimpleNamespace()
 
     def run(self, req):
         self.run_called = True
@@ -44,10 +45,11 @@ def _news_item():
 
 @patch("app.services.portfolio_engine.fetch_daily_history", return_value=list(range(1, 40)))
 @patch("app.services.portfolio_engine.fetch_price", return_value=(100.0, "test", "USD"))
+@patch("app.services.portfolio_engine.load_portfolio_holdings", return_value=[{"symbol": "ASTOR", "qty": 10.0}])
 class PortfolioCacheTests(unittest.TestCase):
     def test_portfolio_news_cache_fallback_order(self, *_):
         alias_map = pe.load_aliases()
-        wl_key = ",".join(sorted(set(pe._build_portfolio_watchlist(alias_map))))
+        wl_key = ",".join(sorted(set(pe._build_portfolio_watchlist(alias_map, [{"symbol": "ASTOR", "qty": 10.0}]))))
         key_primary = cache_key("news", "24h", wl_key)
         key_all = cache_key("news", "24h", "all")
         key_empty = cache_key("news", "24h", "")
@@ -74,7 +76,7 @@ class PortfolioCacheTests(unittest.TestCase):
 
     def test_portfolio_pipeline_writes_primary_cache(self, *_):
         alias_map = pe.load_aliases()
-        wl_key = ",".join(sorted(set(pe._build_portfolio_watchlist(alias_map))))
+        wl_key = ",".join(sorted(set(pe._build_portfolio_watchlist(alias_map, [{"symbol": "ASTOR", "qty": 10.0}]))))
         key_primary = cache_key("news", "24h", wl_key)
 
         with patch.dict(os.environ, {"PORTFOLIO_PIPELINE_ENABLED": "true"}):

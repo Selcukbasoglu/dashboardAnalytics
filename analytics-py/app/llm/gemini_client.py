@@ -16,6 +16,8 @@ HOLDINGS_FULL_MAX = 24
 RELATED_SYMBOL_MAX = 8
 RELATED_PER_SYMBOL_MAX = 2
 HEADLINE_TITLE_MAX = 180
+TRACKER_UPCOMING_MAX = 10
+TRACKER_CEO_MAX = 10
 SUMMARY_HEADERS = [
     "Haber Temelli Icgoruler",
     "Sektor Etkisi",
@@ -139,6 +141,144 @@ def _compact_holdings(rows: list[dict] | None, limit: int) -> list[dict]:
     return out
 
 
+def _compact_tracker(payload: dict[str, Any]) -> dict[str, Any]:
+    raw = payload.get("announcementTracker") or {}
+    if not isinstance(raw, dict):
+        return {"portfolio_upcoming": [], "sector_ceo_statements": [], "summary": {}}
+
+    upcoming = []
+    for row in raw.get("portfolio_upcoming") or []:
+        headline = _clean_title(row.get("headline"))
+        if not headline:
+            continue
+        related_constituents = []
+        for c in row.get("related_constituents") or []:
+            sym = (c.get("symbol") or "").upper()
+            comp = (c.get("company") or "").strip()
+            if sym:
+                related_constituents.append({"symbol": sym, "company": comp})
+            if len(related_constituents) >= 4:
+                break
+        upcoming.append(
+            {
+                "symbol": (row.get("symbol") or "").upper(),
+                "sector": (row.get("sector") or "").upper(),
+                "event_type": row.get("event_type"),
+                "eta_days": row.get("eta_days"),
+                "match_scope": row.get("match_scope"),
+                "related_constituents": related_constituents,
+                "headline": headline,
+                "source": row.get("source"),
+            }
+        )
+        if len(upcoming) >= TRACKER_UPCOMING_MAX:
+            break
+
+    ceo_rows = []
+    for row in raw.get("sector_ceo_statements") or []:
+        headline = _clean_title(row.get("headline"))
+        if not headline:
+            continue
+        ceo_rows.append(
+            {
+                "sector": (row.get("sector") or "").upper(),
+                "company": row.get("company"),
+                "ceo": row.get("ceo"),
+                "stance": row.get("stance"),
+                "signal_score": row.get("signal_score"),
+                "linked_symbols": _compact_str_list(row.get("linked_symbols"), 6, max_len=10, upper=True),
+                "headline": headline,
+                "source": row.get("source"),
+            }
+        )
+        if len(ceo_rows) >= TRACKER_CEO_MAX:
+            break
+
+    monthly_raw = raw.get("monthly_plan") or {}
+    monthly_items = []
+    for row in (monthly_raw.get("items") or [])[:8]:
+        headline = _clean_title(row.get("headline"))
+        if not headline:
+            continue
+        related_constituents = []
+        for c in row.get("related_constituents") or []:
+            sym = (c.get("symbol") or "").upper()
+            comp = (c.get("company") or "").strip()
+            if sym:
+                related_constituents.append({"symbol": sym, "company": comp})
+            if len(related_constituents) >= 4:
+                break
+        monthly_items.append(
+            {
+                "symbol": (row.get("symbol") or "").upper(),
+                "event_type": row.get("event_type"),
+                "eta_days": row.get("eta_days"),
+                "eta_estimated": bool(row.get("eta_estimated")),
+                "match_scope": row.get("match_scope"),
+                "related_constituents": related_constituents,
+                "headline": headline,
+            }
+        )
+
+    monthly_by_week = []
+    for row in (monthly_raw.get("by_week") or [])[:5]:
+        monthly_by_week.append(
+            {
+                "week": row.get("week"),
+                "start_day": row.get("start_day"),
+                "end_day": row.get("end_day"),
+                "count": row.get("count"),
+                "event_types": row.get("event_types") or {},
+                "symbols": _compact_str_list(row.get("symbols"), 6, max_len=10, upper=True),
+            }
+        )
+
+    monthly_by_type = []
+    for row in (monthly_raw.get("by_event_type") or [])[:6]:
+        monthly_by_type.append({"event_type": row.get("event_type"), "count": row.get("count")})
+
+    return {
+        "portfolio_upcoming": upcoming,
+        "sector_ceo_statements": ceo_rows,
+        "monthly_plan": {
+            "window_days": monthly_raw.get("window_days"),
+            "items": monthly_items,
+            "by_week": monthly_by_week,
+            "by_event_type": monthly_by_type,
+        },
+        "summary": raw.get("summary") or {},
+    }
+
+
+def _compact_pricing_model(payload: dict[str, Any]) -> dict[str, Any]:
+    raw = payload.get("newsPricingModel") or payload.get("newsPricing") or {}
+    if not isinstance(raw, dict):
+        return {}
+    rows = []
+    for row in raw.get("symbol_pricing") or []:
+        sym = (row.get("symbol") or "").upper()
+        if not sym:
+            continue
+        rows.append(
+            {
+                "symbol": sym,
+                "pressure_score": row.get("pressure_score"),
+                "state": row.get("state"),
+                "expected_move_pct_24h": row.get("expected_move_pct_24h"),
+                "confidence": row.get("confidence"),
+                "prepricing_ratio": row.get("prepricing_ratio"),
+            }
+        )
+        if len(rows) >= 10:
+            break
+    return {
+        "market_pressure_score": raw.get("market_pressure_score"),
+        "market_regime": raw.get("market_regime"),
+        "coverage_quality": raw.get("coverage_quality"),
+        "symbol_pricing": rows,
+    }
+
+
 def _prepare_payload(payload: dict[str, Any], budget_chars: int = MAX_PROMPT_PAYLOAD_CHARS) -> dict[str, Any]:
     top_news = _compact_headlines(payload.get("topNews"), TOP_NEWS_MAX, "T")
     local_news = _compact_headlines(payload.get("localHeadlines"), LOCAL_NEWS_MAX, "L")
@@ -153,6 +293,8 @@ def _prepare_payload(payload: dict[str, Any], budget_chars: int = MAX_PROMPT_PAY
         "topNews": top_news,
         "localHeadlines": local_news,
         "relatedNews": _compact_related_news(payload.get("relatedNews") or {}),
+        "announcementTracker": _compact_tracker(payload),
+        "newsPricingModel": _compact_pricing_model(payload),
         "holdings": _compact_holdings(payload.get("holdings"), 12),
         "holdings_full": _compact_holdings(payload.get("holdings_full"), HOLDINGS_FULL_MAX),
         "recommendations": payload.get("recommendations") or [],
@@ -169,6 +311,15 @@ def _prepare_payload(payload: dict[str, Any], budget_chars: int = MAX_PROMPT_PAY
             # Drop least important symbols first to preserve top/local headline evidence.
             last = sorted(result["relatedNews"].keys())[-1]
             result["relatedNews"].pop(last, None)
+            continue
+        if len(result["announcementTracker"].get("sector_ceo_statements") or []) > 5:
+            result["announcementTracker"]["sector_ceo_statements"] = result["announcementTracker"]["sector_ceo_statements"][:-1]
+            continue
+        if len(result["announcementTracker"].get("portfolio_upcoming") or []) > 5:
+            result["announcementTracker"]["portfolio_upcoming"] = result["announcementTracker"]["portfolio_upcoming"][:-1]
+            continue
+        if len((result["announcementTracker"].get("monthly_plan") or {}).get("items") or []) > 5:
+            result["announcementTracker"]["monthly_plan"]["items"] = result["announcementTracker"]["monthly_plan"]["items"][:-1]
             continue
         if len(result["holdings_full"]) > 10:
             result["holdings_full"] = result["holdings_full"][:-2]
@@ -323,6 +474,7 @@ def _iter_prioritized_headlines(payload: dict[str, Any]) -> list[dict[str, Any]]
 
 def _build_evidence_lines(payload: dict[str, Any], limit: int = 4) -> list[str]:
     lines: list[str] = []
+    evidence_ids = _evidence_id_map(payload)
     rows = _related_rows(payload)
     used: set[str] = set()
     for row in rows:
@@ -337,6 +489,19 @@ def _build_evidence_lines(payload: dict[str, Any], limit: int = 4) -> list[str]:
         if len(lines) >= limit:
             break
     if lines:
+        tracker_rows = (payload.get("announcementTracker") or {}).get("portfolio_upcoming") or []
+        for tr in tracker_rows[:2]:
+            headline = _clean_title(tr.get("headline"))
+            if not headline:
+                continue
+            eid = evidence_ids.get(headline.lower(), "T1")
+            sym = (tr.get("symbol") or "N/A").upper()
+            eta_days = tr.get("eta_days")
+            lines.append(
+                f"- [KANIT:{eid}] {sym} icin planli aciklama ({tr.get('event_type')}) bekleniyor; vade {eta_days} gun."
+            )
+            if len(lines) >= max(5, limit + 1):
+                break
         return lines
 
     for row in _iter_prioritized_headlines(payload)[: max(3, limit)]:
@@ -388,10 +553,33 @@ def _build_sector_lines(payload: dict[str, Any]) -> list[str]:
         out.append(
             f"- {sector}: portfoy agirligi %{weight * 100:.1f}; haber net etkisi {imp:+.2f}."
         )
+    ceo_rows = (payload.get("announcementTracker") or {}).get("sector_ceo_statements") or []
+    for row in ceo_rows[:2]:
+        linked = [str(x).upper() for x in (row.get("linked_symbols") or []) if x]
+        if not linked:
+            continue
+        out.append(
+            f"- {row.get('sector')}: {row.get('company')} CEO ({row.get('ceo')}) aciklamasi "
+            f"{row.get('stance')} tonda; ilgili semboller: {', '.join(linked[:3])}."
+        )
     return out or ["- Sektor dagiliminda anlamli agirlik verisi yok."]
 
 
 def _build_portfolio_lines(payload: dict[str, Any]) -> list[str]:
+    pricing_rows = ((payload.get("newsPricingModel") or {}).get("symbol_pricing") or [])[:4]
+    out: list[str] = []
+    for row in pricing_rows:
+        sym = (row.get("symbol") or "").upper()
+        if not sym:
+            continue
+        score = _safe_float(row.get("pressure_score"))
+        out.append(
+            f"- {sym}: fiyatlama baskisi {_direction_text(None, score)} "
+            f"(rejim {row.get('state')}, net baski {score:+.2f})."
+        )
+    if out:
+        return out
+
     totals: dict[str, float] = {}
     for row in _related_rows(payload):
         symbol = (row.get("symbol") or "").upper()
@@ -407,7 +595,7 @@ def _build_portfolio_lines(payload: dict[str, Any]) -> list[str]:
             signed = base if sent == "positive" else (-base if sent == "negative" else 0.0)
             for sym in symbols:
                 totals[sym] = totals.get(sym, 0.0) + signed
-    out: list[str] = []
+    out = []
     for sym, score in sorted(totals.items(), key=lambda x: abs(x[1]), reverse=True)[:4]:
         out.append(
             f"- {sym}: kisa vade beklenti {_direction_text(None, score)} "
@@ -440,6 +628,11 @@ def _build_model_idea_lines(payload: dict[str, Any]) -> list[str]:
     ideas: list[str] = []
     risk_flags = [str(x) for x in (payload.get("riskFlags") or [])]
     coverage_ratio = _safe_float((payload.get("stats") or {}).get("coverage_ratio"))
+    pricing_model = payload.get("newsPricingModel") or {}
+    market_regime = str(pricing_model.get("market_regime") or "NEUTRAL")
+    market_score = _safe_float(pricing_model.get("market_pressure_score"))
+    tracker_summary = (payload.get("announcementTracker") or {}).get("summary") or {}
+    upcoming_count = int(tracker_summary.get("upcoming_count") or 0)
     top = payload.get("topNews") or []
     theme = _clean_title(top[0].get("title")) if top else "makro akim"
 
@@ -447,6 +640,15 @@ def _build_model_idea_lines(payload: dict[str, Any]) -> list[str]:
         ideas.append("- Model gorusu (ORTA): USD kaynakli oynaklik devam ederse TRY bazli portfoyde dalga boyu artabilir. (varsayim)")
     if coverage_ratio < 0.40:
         ideas.append("- Model gorusu (DUSUK): Haber kapsami dusuk kaldigi icin sinyal guvenirligi zayif kalabilir. (varsayim)")
+    if market_regime != "NEUTRAL":
+        ideas.append(
+            f"- Model gorusu (ORTA): Haber fiyatlama rejimi {market_regime} "
+            f"(skor {market_score:+.2f}); bu rejim surerse taktik agirlik kaydirma gerekebilir. (varsayim)"
+        )
+    if upcoming_count >= 2:
+        ideas.append(
+            f"- Model gorusu (ORTA): Yaklasan {upcoming_count} kurumsal aciklama volatiliteyi gecici artirabilir. (varsayim)"
+        )
     ideas.append(
         f"- Model gorusu (ORTA): '{theme}' temasinin surmesi durumunda benzer sektorlerde momentum korunabilir. (varsayim)"
     )
@@ -521,6 +723,8 @@ def _build_prompt(payload: dict[str, Any], strict: bool = False) -> str:
         "KURALLAR:\n"
         "- Haber Temelli Icgoruler maddelerinde [KANIT:Tx/Lx] etiketi zorunlu.\n"
         "- localHeadlines altindaki tags/portfolioSymbols/portfolioSectors alanlarini onceliklendir.\n"
+        "- announcementTracker ve newsPricingModel alanlarini kullanarak planli aciklama/fiyatlama yorumlari ekle.\n"
+        "- Aylik takipte monthly_plan (30 gun) bolumunu kullan; bilanço ve urun lansmani planlarini ozetle.\n"
         "- Model Fikirleri maddelerinde 'Model gorusu' ve olasilik (DUSUK/ORTA/YUKSEK) zorunlu.\n"
         "- Model Fikirleri bolumu kanitsiz olabilir ama varsayim oldugunu acik yaz.\n"
         "- Yatirim tavsiyesi verme, emir cagrisi yapma.\n"

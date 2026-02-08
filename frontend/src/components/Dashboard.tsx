@@ -303,10 +303,12 @@ function Badge({
   children,
   tone = "neutral",
   className,
+  title,
 }: {
   children: React.ReactNode;
   tone?: "neutral" | "good" | "bad" | "warn" | "info" | "signal";
   className?: string;
+  title?: string;
 }) {
   const tones: Record<string, string> = {
     neutral: "bg-black/5 text-black/70 border-black/10",
@@ -317,7 +319,7 @@ function Badge({
     signal: "bg-amber-200/80 text-amber-900 border-amber-300",
   };
   return (
-    <span className={cx("inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs", tones[tone], className)}>
+    <span title={title} className={cx("inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs", tones[tone], className)}>
       {children}
     </span>
   );
@@ -365,11 +367,13 @@ function Button({
 function Input({
   value,
   onChange,
+  onKeyDown,
   placeholder,
   className,
 }: {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   placeholder?: string;
   className?: string;
 }) {
@@ -377,6 +381,7 @@ function Input({
     <input
       value={value}
       onChange={onChange}
+      onKeyDown={onKeyDown}
       placeholder={placeholder}
       className={cx(
         "w-full rounded-2xl border border-black/10 bg-white/80 px-4 py-2 text-sm text-black shadow-sm outline-none focus:ring-2 focus:ring-[var(--accent)]",
@@ -1048,6 +1053,38 @@ function directionMeta(dir: "UP" | "DOWN" | "NEUTRAL") {
   return { label: "Notr", tone: "neutral" as const, icon: Activity };
 }
 
+function announcementTopicLabel(eventType?: string) {
+  const key = (eventType || "").toUpperCase();
+  if (key === "EARNINGS") return "Sirket bilanco/finansal sonuc aciklamasi";
+  if (key === "PRODUCT") return "Urun lansmani veya urun takvimi";
+  if (key === "GUIDANCE") return "Beklenti/guidance guncellemesi";
+  if (key === "INVESTOR_DAY") return "Yatirimci/analist gunu";
+  if (key === "CONFERENCE_CALL") return "Konferans/earnings call";
+  if (key === "DISCLOSURE") return "KAP/disclosure bildirimi";
+  if (key === "REGULATORY") return "Regulasyon/onay kaynakli aciklama";
+  return "Kurumsal aciklama";
+}
+
+function relatedConstituentsLabel(rows?: Array<{ symbol?: string; company?: string }>) {
+  const parts: string[] = [];
+  for (const row of rows || []) {
+    const symbol = (row?.symbol || "").toUpperCase().trim();
+    const company = (row?.company || "").trim();
+    if (!symbol) continue;
+    parts.push(company ? `${symbol} (${company})` : symbol);
+    if (parts.length >= 4) break;
+  }
+  return parts.join(", ");
+}
+
+function matchScopeLabel(scope?: string) {
+  const key = (scope || "").toLowerCase();
+  if (key === "fund_constituent") return "fon ici";
+  if (key === "direct_and_fund") return "dogrudan + fon ici";
+  if (key === "direct") return "dogrudan";
+  return "belirsiz";
+}
+
 function biasTone(value: number) {
   if (value > 0) return "good";
   if (value < 0) return "bad";
@@ -1101,23 +1138,41 @@ function applyIntelDiff(prev: IntelResponse | null, next: IntelResponse): IntelR
       changed_blocks: next.changed_blocks,
     };
   }
-  const map: Record<string, keyof IntelResponse> = {
-    market: "market",
-    leaders: "leaders",
-    top_news: "top_news",
-    eventfeed: "event_feed",
-    flow: "flow",
-    risk: "risk",
-    derivatives: "derivatives",
-    forecast: "forecast",
-    daily_equity_movers: "daily_equity_movers",
-    debug: "debug",
-  };
   const merged: IntelResponse = { ...prev };
   for (const key of changed) {
-    const field = map[key];
-    if (field) {
-      merged[field] = next[field];
+    switch (key) {
+      case "market":
+        merged.market = next.market;
+        break;
+      case "leaders":
+        merged.leaders = next.leaders;
+        break;
+      case "top_news":
+        merged.top_news = next.top_news;
+        break;
+      case "eventfeed":
+        merged.event_feed = next.event_feed;
+        break;
+      case "flow":
+        merged.flow = next.flow;
+        break;
+      case "risk":
+        merged.risk = next.risk;
+        break;
+      case "derivatives":
+        merged.derivatives = next.derivatives;
+        break;
+      case "forecast":
+        merged.forecast = next.forecast;
+        break;
+      case "daily_equity_movers":
+        merged.daily_equity_movers = next.daily_equity_movers;
+        break;
+      case "debug":
+        merged.debug = next.debug;
+        break;
+      default:
+        break;
     }
   }
   merged.tsISO = next.tsISO;
@@ -1418,6 +1473,26 @@ export default function Dashboard() {
       : null;
   const coverageMatched = portfolio?.newsImpact?.coverage?.matched ?? visibleNewsItems.length;
   const coverageTotal = portfolio?.newsImpact?.coverage?.total ?? rawNewsItems.length;
+  const tracker = portfolio?.newsImpact?.tracker;
+  const trackerSummary = tracker?.summary;
+  const upcomingAnnouncements = tracker?.portfolio_upcoming ?? [];
+  const monthlyPlan = tracker?.monthly_plan;
+  const monthlyPlanItems = monthlyPlan?.items ?? [];
+  const monthlyPlanByWeek = monthlyPlan?.by_week ?? [];
+  const monthlyPlanByType = monthlyPlan?.by_event_type ?? [];
+  const ceoSignals = tracker?.sector_ceo_statements ?? [];
+  const fundConstituentEventCount = trackerSummary?.fund_constituent_event_count ?? 0;
+  const fundsWithConstituentSignal = trackerSummary?.funds_with_constituent_signal ?? 0;
+  const pricingModel = portfolio?.newsImpact?.pricing_model;
+  const pricingRegime = pricingModel?.market_regime ?? "NEUTRAL";
+  const pricingScore = pricingModel?.market_pressure_score ?? 0;
+  const topPricingSignals = useMemo(() => {
+    const rows = pricingModel?.symbol_pricing ?? [];
+    return rows
+      .filter((row) => holdingsSymbolsSet.has(row.symbol))
+      .sort((a, b) => Math.abs((b.pressure_score ?? 0) as number) - Math.abs((a.pressure_score ?? 0) as number))
+      .slice(0, 4);
+  }, [pricingModel?.symbol_pricing, holdingsSymbolsSet]);
 
   useEffect(() => {
     if (market?.coingecko?.dominance) {
@@ -2449,6 +2524,94 @@ export default function Dashboard() {
                   </div>
                 </div>
               ) : null}
+              <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+                <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-[11px] text-black/65">
+                  <div className="mb-1 text-[11px] uppercase tracking-wide text-black/40">Gelecek Aciklama Takibi</div>
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <Badge tone="info">yaklasan: {upcomingAnnouncements.length}</Badge>
+                    <Badge tone="info">30g plan: {monthlyPlanItems.length}</Badge>
+                    <Badge tone="info">ceo sinyali: {ceoSignals.length}</Badge>
+                    <Badge tone="signal">fon-ici olay: {fundConstituentEventCount}</Badge>
+                    <Badge tone="signal">fon sinyali: {fundsWithConstituentSignal}</Badge>
+                  </div>
+                  <div className="mb-2 flex flex-wrap items-center gap-1">
+                    {(monthlyPlanByType.slice(0, 4) || []).map((row, idx) => (
+                      <Badge key={`mtype-${idx}`} className="bg-white/80 text-black/60">
+                        {(row.event_type || "EVENT").toString()}:{row.count ?? 0}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="space-y-1.5">
+                    {monthlyPlanItems.slice(0, 4).map((row, idx) => (
+                      <div key={`upcoming-${idx}`} className="rounded-lg border border-black/10 bg-white/80 px-2 py-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="font-semibold text-black">
+                            {(row.symbol || "—").toUpperCase()} · {row.event_type || "EVENT"}
+                          </span>
+                          <span className="text-[10px] text-black/50">
+                            {typeof row.eta_days === "number" ? `${row.eta_days}g` : "vade yok"}
+                            {row.eta_estimated ? " · tahmini" : ""}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[10px] text-black/60">
+                          <span className="font-semibold text-black/70">Konu:</span> {announcementTopicLabel(row.event_type)}
+                        </div>
+                        <div className="mt-1 text-[10px] text-black/60">
+                          <span className="font-semibold text-black/70">Tarih:</span>{" "}
+                          {row.eta_iso ? toTSIString(row.eta_iso) : "belirsiz"}
+                        </div>
+                        <div className="mt-1 text-[10px] text-black/60">
+                          <span className="font-semibold text-black/70">Eslesme:</span> {matchScopeLabel(row.match_scope)}
+                        </div>
+                        {(row.related_constituents || []).length > 0 ? (
+                          <div className="mt-1 text-[10px] text-black/60">
+                            <span className="font-semibold text-black/70">Fon ici:</span>{" "}
+                            {relatedConstituentsLabel(row.related_constituents)}
+                          </div>
+                        ) : null}
+                        <div className="mt-1 line-clamp-2 text-[10px] text-black/55">{row.headline || "—"}</div>
+                      </div>
+                    ))}
+                    {!monthlyPlanItems.length ? <div className="text-[10px] text-black/50">30 gunluk plan bulunmadi.</div> : null}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-1 text-[10px] text-black/55">
+                    {monthlyPlanByWeek.slice(0, 5).map((row, idx) => (
+                      <span key={`mweek-${idx}`} className="rounded-full border border-black/10 bg-white/80 px-2 py-0.5">
+                        {row.week ?? "W?"}: {row.count ?? 0}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-black/10 bg-white/70 px-3 py-2 text-[11px] text-black/65">
+                  <div className="mb-1 text-[11px] uppercase tracking-wide text-black/40">Haber Fiyatlama Algoritmasi</div>
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <Badge tone={pricingScore > 0.12 ? "good" : pricingScore < -0.12 ? "bad" : "neutral"}>
+                      {pricingRegime}
+                    </Badge>
+                    <span className={pricingScore >= 0 ? "text-emerald-700" : "text-rose-700"}>
+                      {formatSigned(pricingScore)}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {topPricingSignals.slice(0, 3).map((row) => {
+                      const cls = getAssetClass(row.symbol, symbolToHolding[row.symbol]);
+                      const score = row.pressure_score ?? 0;
+                      return (
+                        <div key={`pricing-${row.symbol}`} className="rounded-lg border border-black/10 bg-white/80 px-2 py-1">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <Badge tone={assetClassTone(cls)}>{row.symbol}</Badge>
+                              <span className="font-semibold text-black">{row.state || "NO_EDGE"}</span>
+                            </div>
+                            <span className={score >= 0 ? "text-emerald-700" : "text-rose-700"}>{formatSigned(score)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {!topPricingSignals.length ? <div className="text-[10px] text-black/50">Fiyatlama sinyali olusmadi.</div> : null}
+                  </div>
+                </div>
+              </div>
               <div className="space-y-2">
                 {visibleNewsItems.slice(0, 6).map((n, idx) => (
                   <div key={`pnews-${idx}`} className="rounded-xl border border-black/10 bg-white/70 p-2">
@@ -2998,7 +3161,7 @@ export default function Dashboard() {
         right={
           <div className="flex flex-wrap items-center gap-2 text-xs text-black/50">
             <Badge>{filteredClusters.length} cluster</Badge>
-            <span>Son tarama: {toTSIString(eventClusters?.last_scan_ts)}</span>
+            <span>Son tarama: {toTSIString(eventClusters?.last_scan_ts ?? undefined)}</span>
           </div>
         }
       >

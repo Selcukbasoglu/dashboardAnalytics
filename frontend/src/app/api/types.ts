@@ -504,6 +504,89 @@ export type PortfolioResponse = {
       impact_by_symbol_indirect?: Record<string, number>;
       low_signal_ratio?: number;
       coverage_ratio?: number;
+      pricing_market_score?: number;
+      pricing_market_regime?: string;
+    };
+    tracker?: {
+      horizon_days?: number;
+      portfolio_upcoming?: Array<{
+        symbol: string;
+        sector?: string;
+        event_type?: string;
+        eta_days?: number;
+        eta_iso?: string | null;
+        eta_estimated?: boolean;
+        match_scope?: "direct" | "fund_constituent" | "direct_and_fund" | string;
+        related_constituents?: Array<{ symbol?: string; company?: string }>;
+        confidence?: number;
+        headline?: string;
+        source?: string;
+        url?: string;
+      }>;
+      sector_ceo_statements?: Array<{
+        sector?: string;
+        company?: string;
+        ceo?: string;
+        stance?: "positive" | "negative" | "neutral" | string;
+        signal_score?: number;
+        linked_symbols?: string[];
+        headline?: string;
+        source?: string;
+        publishedAtISO?: string | null;
+        url?: string;
+      }>;
+      summary?: {
+        upcoming_count?: number;
+        ceo_statement_count?: number;
+        symbols_with_upcoming?: number;
+        sectors_with_ceo_signal?: number;
+        fund_constituent_event_count?: number;
+        funds_with_constituent_signal?: number;
+      };
+      monthly_plan?: {
+        window_days?: number;
+        items?: Array<{
+          symbol: string;
+          sector?: string;
+          event_type?: string;
+          eta_days?: number;
+          eta_iso?: string | null;
+          eta_estimated?: boolean;
+          match_scope?: "direct" | "fund_constituent" | "direct_and_fund" | string;
+          related_constituents?: Array<{ symbol?: string; company?: string }>;
+          confidence?: number;
+          headline?: string;
+          source?: string;
+          url?: string;
+        }>;
+        by_week?: Array<{
+          week?: string;
+          start_day?: number;
+          end_day?: number;
+          count?: number;
+          event_types?: Record<string, number>;
+          symbols?: string[];
+        }>;
+        by_event_type?: Array<{ event_type?: string; count?: number }>;
+      };
+    };
+    pricing_model?: {
+      market_pressure_score?: number;
+      market_regime?: string;
+      coverage_quality?: number;
+      symbol_pricing?: Array<{
+        symbol: string;
+        pressure_score?: number;
+        state?: string;
+        expected_move_pct_24h?: number;
+        confidence?: number;
+        evidence_count?: number;
+        prepricing_ratio?: number;
+        direct_component?: number;
+        indirect_component?: number;
+      }>;
+      top_positive?: Array<{ symbol: string; pressure_score?: number; state?: string }>;
+      top_negative?: Array<{ symbol: string; pressure_score?: number; state?: string }>;
     };
     coverage: { total: number; matched: number };
   };

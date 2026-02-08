@@ -30,6 +30,7 @@ from app.infra.cache import cache_key
 from app.llm.gemini_client import generate_portfolio_summary
 from app.services.quote_router import get_quote_router
 from app.providers.yahoo import _fetch_chart
+from app.services.news_pricing import build_announcement_tracker, compute_news_pricing_model
 
 
 BASE_DIR = Path(__file__).resolve().parents[3]
@@ -779,6 +780,7 @@ def build_optimizer(
     news_indirect: dict,
     risk_flags: list[str],
     settings: PortfolioSettings,
+    news_pricing: dict[str, float] | None = None,
     coverage_ratio: float = 1.0,
     coverage_total: int = 0,
     low_signal_ratio: float = 0.0,
@@ -795,9 +797,9 @@ def build_optimizer(
         hold_reason = "LOW_COVERAGE_OR_LOW_SIGNAL"
 
     coeffs = {
-        "daily": {"a": 0.20, "b": 0.30, "b2": 0.12, "c": 0.15, "s": 0.10, "d": 0.20, "e": 0.15, "f": 0.10, "g": 0.08},
-        "weekly": {"a": 0.25, "b": 0.25, "b2": 0.15, "c": 0.15, "s": 0.15, "d": 0.18, "e": 0.12, "f": 0.10, "g": 0.06},
-        "monthly": {"a": 0.30, "b": 0.15, "b2": 0.18, "c": 0.12, "s": 0.20, "d": 0.15, "e": 0.15, "f": 0.10, "g": 0.05},
+        "daily": {"a": 0.20, "b": 0.28, "b2": 0.10, "p": 0.18, "c": 0.15, "s": 0.10, "d": 0.20, "e": 0.15, "f": 0.10, "g": 0.08},
+        "weekly": {"a": 0.25, "b": 0.23, "b2": 0.13, "p": 0.14, "c": 0.15, "s": 0.15, "d": 0.18, "e": 0.12, "f": 0.10, "g": 0.06},
+        "monthly": {"a": 0.30, "b": 0.12, "b2": 0.16, "p": 0.10, "c": 0.12, "s": 0.20, "d": 0.15, "e": 0.15, "f": 0.10, "g": 0.05},
     }
     periods = [
         ("daily", settings.turnover_daily * clamp_ratio),
@@ -832,6 +834,7 @@ def build_optimizer(
             mom = _clamp((mom_raw or 0.0) / 3.0)
             news_dir = _clamp(news_direct.get(h["symbol"], 0.0))
             news_ind = _clamp(news_indirect.get(h["symbol"], 0.0))
+            news_px = _clamp((news_pricing or {}).get(h["symbol"], 0.0))
             regime = -0.3 if risk_off and h["asset_class"] == "CRYPTO" else 0.1
             regime = _clamp(regime)
             sector_rotation = 0.0
@@ -849,6 +852,7 @@ def build_optimizer(
                 cset["a"] * mom
                 + cset["b"] * news_dir
                 + cset["b2"] * news_ind
+                + cset["p"] * news_px
                 + cset["c"] * regime
                 + cset["s"] * sector_rotation
                 - cset["d"] * vol_norm
@@ -860,6 +864,7 @@ def build_optimizer(
                 "mom": mom,
                 "news_direct": news_dir,
                 "news_indirect": news_ind,
+                "news_pricing": news_px,
                 "regime": regime,
                 "sector_rotation": sector_rotation,
                 "vol": vol_norm,
@@ -1253,6 +1258,13 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
 
     coverage_ratio = (len(news_items) / len(top_news)) if top_news else 0.0
     low_signal_ratio = (low_signal_count / max(1, len(news_items))) if news_items else 0.0
+    announcement_tracker = build_announcement_tracker(top_news, local_news, holdings, alias_map, news_horizon)
+    pricing_model = compute_news_pricing_model(news_items, holdings, announcement_tracker)
+    news_pricing_scores = {
+        str(row.get("symbol") or "").upper(): float(row.get("pressure_score") or 0.0)
+        for row in (pricing_model.get("symbol_pricing") or [])
+        if row.get("symbol")
+    }
     recs = build_optimizer(
         holdings,
         asset_news,
@@ -1260,6 +1272,7 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
         asset_news_indirect,
         risk_flags,
         settings,
+        news_pricing=news_pricing_scores,
         coverage_ratio=coverage_ratio,
         coverage_total=len(top_news),
         low_signal_ratio=low_signal_ratio,
@@ -1291,6 +1304,11 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
         f"portfolio_missing_prices={len(missing_prices)}",
         f"portfolio_fx_status={fx_status}",
         f"portfolio_news_matched={len(news_items)}",
+        f"portfolio_upcoming_announcements={len((announcement_tracker.get('portfolio_upcoming') or []))}",
+        f"portfolio_monthly_plan_items={len(((announcement_tracker.get('monthly_plan') or {}).get('items') or []))}",
+        f"portfolio_ceo_statement_signals={len((announcement_tracker.get('sector_ceo_statements') or []))}",
+        f"news_pricing_regime={pricing_model.get('market_regime', 'NEUTRAL')}",
+        f"news_pricing_market_score={pricing_model.get('market_pressure_score', 0.0)}",
         f"portfolio_news_match_methods={match_summary}",
         f"portfolio_news_false_positive_guard_hits={match_summary.get('guarded', 0)}",
         f"portfolio_opt_status=ok" if recs else "portfolio_opt_status=partial",
@@ -1387,6 +1405,8 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
                 "relatedNews": related_news_for_llm,
                 "topNews": top_news_brief,
                 "localHeadlines": local_headlines_brief,
+                "announcementTracker": announcement_tracker,
+                "newsPricingModel": pricing_model,
                 "localHeadlineCount": local_titles_sent,
                 "recommendations": recs_brief,
                 "riskFlags": risk_flags,
@@ -1396,6 +1416,8 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
                     "low_signal_ratio": low_signal_ratio,
                     "fx_usd_exposure": usd_exposure,
                     "portfolio_value_base": total_value,
+                    "pricing_market_regime": pricing_model.get("market_regime"),
+                    "pricing_market_score": pricing_model.get("market_pressure_score"),
                     "news_titles_sent": top_titles_sent,
                     "local_titles_sent": local_titles_sent,
                     "news_titles_sent_total": total_titles_sent,
@@ -1440,7 +1462,11 @@ def build_portfolio(pipeline, base_currency: str = "TRY", news_horizon: str = "2
                 "impact_by_symbol_indirect": asset_news_indirect,
                 "low_signal_ratio": low_signal_ratio,
                 "coverage_ratio": coverage_ratio,
+                "pricing_market_score": pricing_model.get("market_pressure_score"),
+                "pricing_market_regime": pricing_model.get("market_regime"),
             },
+            "tracker": announcement_tracker,
+            "pricing_model": pricing_model,
             "coverage": {"total": len(top_news), "matched": len(news_items)},
         },
         "portfolioSummary": {

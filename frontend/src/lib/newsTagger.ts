@@ -107,12 +107,12 @@ export function normalizeNews(raw: GdeltRaw[]): NewsItem[] {
       return {
         title: n.title,
         url: n.url,
-        source: n.domain ?? null,
-        publishedAtISO: parseGdeltSeenDate(n.seendate),
+        source: n.domain ?? "gdelt",
+        publishedAtISO: parseGdeltSeenDate(n.seendate ?? undefined),
         tags,
         score,
+        tier_score: score,
       };
     })
     .sort((a, b) => b.score - a.score);
 }
-

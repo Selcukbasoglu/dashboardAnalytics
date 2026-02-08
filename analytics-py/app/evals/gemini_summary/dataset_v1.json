@@ -1,0 +1,1760 @@
+[
+  {
+    "id": "case_001_balanced_portfolio_news",
+    "tags": [
+      "core",
+      "bist",
+      "nasdaq"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "24h",
+      "period": "daily",
+      "coverage": {
+        "matched": 6,
+        "total": 10
+      },
+      "stats": {
+        "coverage_ratio": 0.6
+      },
+      "riskFlags": [
+        "FX_RISK_UP"
+      ],
+      "topNews": [
+        {
+          "title": "AMD raises AI data center guidance for 2026",
+          "source": "reuters.com",
+          "publishedAtISO": "2026-02-08T12:20:00Z"
+        },
+        {
+          "title": "Borsa Istanbul utilities gain after demand outlook",
+          "source": "ekonomim.com",
+          "publishedAtISO": "2026-02-08T11:40:00Z"
+        }
+      ],
+      "localHeadlines": [
+        {
+          "title": "ASTOR siparis akisinda guclenme sinyali verdi",
+          "source": "kap.org.tr",
+          "publishedAtISO": "2026-02-08T10:10:00Z",
+          "tags": [
+            "PORTFOLIO_SYMBOL_MATCH",
+            "EARNINGS_THEME"
+          ],
+          "portfolioSymbols": [
+            "ASTOR"
+          ],
+          "portfolioSectors": [
+            "POWER_UTILITIES"
+          ],
+          "relevanceHint": 9
+        }
+      ],
+      "relatedNews": {
+        "ASTOR": [
+          {
+            "title": "ASTOR order pipeline improved",
+            "direction": "positive",
+            "impactScore": 0.19
+          }
+        ],
+        "AMD": [
+          {
+            "title": "AMD guidance upgraded on AI demand",
+            "direction": "positive",
+            "impactScore": 0.24
+          }
+        ]
+      },
+      "holdings": [
+        {
+          "symbol": "ASTOR",
+          "weight": 0.32,
+          "asset_class": "BIST",
+          "sector": "POWER_UTILITIES"
+        },
+        {
+          "symbol": "AMD",
+          "weight": 0.28,
+          "asset_class": "NASDAQ",
+          "sector": "SEMICONDUCTORS"
+        },
+        {
+          "symbol": "SIL",
+          "weight": 0.12,
+          "asset_class": "NASDAQ",
+          "sector": "METALS_MINERS"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "ASTOR",
+          "weight": 0.32,
+          "asset_class": "BIST",
+          "sector": "POWER_UTILITIES"
+        },
+        {
+          "symbol": "AMD",
+          "weight": 0.28,
+          "asset_class": "NASDAQ",
+          "sector": "SEMICONDUCTORS"
+        },
+        {
+          "symbol": "SIL",
+          "weight": 0.12,
+          "asset_class": "NASDAQ",
+          "sector": "METALS_MINERS"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [
+          {
+            "symbol": "AMD",
+            "sector": "SEMICONDUCTORS",
+            "event_type": "EARNINGS",
+            "eta_days": 5,
+            "headline": "AMD will report earnings next week",
+            "source": "reuters.com"
+          }
+        ],
+        "sector_ceo_statements": [],
+        "summary": {
+          "upcoming_count": 1,
+          "ceo_statement_count": 0
+        }
+      },
+      "newsPricingModel": {
+        "market_pressure_score": 0.14,
+        "market_regime": "BULLISH_PRICING",
+        "symbol_pricing": [
+          {
+            "symbol": "AMD",
+            "pressure_score": 0.32,
+            "state": "UNDERPRICED",
+            "expected_move_pct_24h": 0.21,
+            "confidence": 72
+          }
+        ]
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.7,
+        "header_coverage": 1.0,
+        "evidence_density": 0.65,
+        "portfolio_grounding": 0.66
+      },
+      "must_contain": [
+        "Haber Temelli Icgoruler",
+        "Model Fikirleri (Varsayim)"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.7,
+          "header_coverage": 1.0,
+          "evidence_density": 0.65,
+          "portfolio_grounding": 0.66
+        },
+        "must_contain": [
+          "Haber Temelli Icgoruler",
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.78,
+          "header_coverage": 1.0,
+          "evidence_density": 0.75,
+          "portfolio_grounding": 0.76
+        },
+        "must_contain": [
+          "Haber Temelli Icgoruler",
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  },
+  {
+    "id": "case_002_low_coverage_guard",
+    "tags": [
+      "core",
+      "low_coverage"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "24h",
+      "period": "daily",
+      "coverage": {
+        "matched": 1,
+        "total": 7
+      },
+      "stats": {
+        "coverage_ratio": 0.14
+      },
+      "riskFlags": [],
+      "topNews": [
+        {
+          "title": "Global markets mixed before CPI print",
+          "source": "ft.com",
+          "publishedAtISO": "2026-02-08T13:10:00Z"
+        }
+      ],
+      "localHeadlines": [],
+      "relatedNews": {
+        "SOKM": [
+          {
+            "title": "Consumer demand remains soft",
+            "direction": "negative",
+            "impactScore": -0.08
+          }
+        ]
+      },
+      "holdings": [
+        {
+          "symbol": "SOKM",
+          "weight": 0.24,
+          "asset_class": "BIST",
+          "sector": "CONSUMER_RETAIL"
+        },
+        {
+          "symbol": "TUPRS",
+          "weight": 0.22,
+          "asset_class": "BIST",
+          "sector": "ENERGY"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "SOKM",
+          "weight": 0.24,
+          "asset_class": "BIST",
+          "sector": "CONSUMER_RETAIL"
+        },
+        {
+          "symbol": "TUPRS",
+          "weight": 0.22,
+          "asset_class": "BIST",
+          "sector": "ENERGY"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [],
+        "sector_ceo_statements": [],
+        "summary": {
+          "upcoming_count": 0
+        }
+      },
+      "newsPricingModel": {
+        "market_pressure_score": -0.04,
+        "market_regime": "NEUTRAL",
+        "symbol_pricing": []
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.58,
+        "header_coverage": 1.0,
+        "evidence_density": 0.5
+      },
+      "must_contain": [
+        "Model Fikirleri (Varsayim)"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.58,
+          "header_coverage": 1.0,
+          "evidence_density": 0.5
+        },
+        "must_contain": [
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.66,
+          "header_coverage": 1.0,
+          "evidence_density": 0.6
+        },
+        "must_contain": [
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  },
+  {
+    "id": "case_003_local_bist_headline_bias",
+    "tags": [
+      "core",
+      "local",
+      "bist"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "24h",
+      "period": "daily",
+      "coverage": {
+        "matched": 4,
+        "total": 8
+      },
+      "stats": {
+        "coverage_ratio": 0.5
+      },
+      "riskFlags": [
+        "FX_RISK_UP"
+      ],
+      "topNews": [
+        {
+          "title": "Turkiye power demand outlook improves for 2026",
+          "source": "aa.com.tr",
+          "publishedAtISO": "2026-02-08T12:00:00Z"
+        }
+      ],
+      "localHeadlines": [
+        {
+          "title": "ENJSA 4Q sonuclarinda operasyonel marj yukselisi",
+          "source": "kap.org.tr",
+          "publishedAtISO": "2026-02-08T09:00:00Z",
+          "tags": [
+            "PORTFOLIO_SYMBOL_MATCH",
+            "KAP_DISCLOSURE",
+            "EARNINGS_THEME"
+          ],
+          "portfolioSymbols": [
+            "ENJSA"
+          ],
+          "portfolioSectors": [
+            "POWER_UTILITIES"
+          ],
+          "relevanceHint": 10
+        },
+        {
+          "title": "TUPRS rafineri marjlari icin yeni beklenti",
+          "source": "ekonomim.com",
+          "publishedAtISO": "2026-02-08T08:30:00Z",
+          "tags": [
+            "PORTFOLIO_SYMBOL_MATCH",
+            "PORTFOLIO_SECTOR_MATCH"
+          ],
+          "portfolioSymbols": [
+            "TUPRS"
+          ],
+          "portfolioSectors": [
+            "ENERGY"
+          ],
+          "relevanceHint": 8
+        }
+      ],
+      "relatedNews": {
+        "ENJSA": [
+          {
+            "title": "ENJSA margins improved",
+            "direction": "positive",
+            "impactScore": 0.15
+          }
+        ],
+        "TUPRS": [
+          {
+            "title": "Refinery spreads stabilize",
+            "direction": "neutral",
+            "impactScore": 0.04
+          }
+        ]
+      },
+      "holdings": [
+        {
+          "symbol": "ENJSA",
+          "weight": 0.18,
+          "asset_class": "BIST",
+          "sector": "POWER_UTILITIES"
+        },
+        {
+          "symbol": "TUPRS",
+          "weight": 0.25,
+          "asset_class": "BIST",
+          "sector": "ENERGY"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "ENJSA",
+          "weight": 0.18,
+          "asset_class": "BIST",
+          "sector": "POWER_UTILITIES"
+        },
+        {
+          "symbol": "TUPRS",
+          "weight": 0.25,
+          "asset_class": "BIST",
+          "sector": "ENERGY"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [
+          {
+            "symbol": "ENJSA",
+            "event_type": "EARNINGS",
+            "eta_days": 2,
+            "headline": "ENJSA will report earnings tomorrow"
+          }
+        ],
+        "summary": {
+          "upcoming_count": 1
+        }
+      },
+      "newsPricingModel": {
+        "market_pressure_score": 0.06,
+        "market_regime": "NEUTRAL",
+        "symbol_pricing": []
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.68,
+        "header_coverage": 1.0,
+        "portfolio_grounding": 0.66
+      },
+      "must_contain": [
+        "Portfoy Hisse Etkisi"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.68,
+          "header_coverage": 1.0,
+          "portfolio_grounding": 0.66
+        },
+        "must_contain": [
+          "Portfoy Hisse Etkisi"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.76,
+          "header_coverage": 1.0,
+          "portfolio_grounding": 0.76
+        },
+        "must_contain": [
+          "Portfoy Hisse Etkisi"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  },
+  {
+    "id": "case_004_etf_constituent_lookthrough",
+    "tags": [
+      "core",
+      "etf",
+      "lookthrough"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "24h",
+      "period": "daily",
+      "coverage": {
+        "matched": 3,
+        "total": 6
+      },
+      "stats": {
+        "coverage_ratio": 0.5
+      },
+      "riskFlags": [],
+      "topNews": [
+        {
+          "title": "Pan American Silver will report earnings next week",
+          "source": "reuters.com",
+          "publishedAtISO": "2026-02-08T14:20:00Z"
+        }
+      ],
+      "localHeadlines": [],
+      "relatedNews": {
+        "SIL": [
+          {
+            "title": "Silver miners outlook improved with PAAS earnings setup",
+            "direction": "positive",
+            "impactScore": 0.11
+          }
+        ]
+      },
+      "holdings": [
+        {
+          "symbol": "SIL",
+          "weight": 0.15,
+          "asset_class": "NASDAQ",
+          "sector": "METALS_MINERS"
+        },
+        {
+          "symbol": "HL",
+          "weight": 0.07,
+          "asset_class": "NASDAQ",
+          "sector": "METALS_MINERS"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "SIL",
+          "weight": 0.15,
+          "asset_class": "NASDAQ",
+          "sector": "METALS_MINERS"
+        },
+        {
+          "symbol": "HL",
+          "weight": 0.07,
+          "asset_class": "NASDAQ",
+          "sector": "METALS_MINERS"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [
+          {
+            "symbol": "SIL",
+            "sector": "METALS_MINERS",
+            "event_type": "EARNINGS",
+            "eta_days": 7,
+            "match_scope": "fund_constituent",
+            "related_constituents": [
+              {
+                "symbol": "PAAS",
+                "company": "Pan American Silver"
+              }
+            ],
+            "headline": "Pan American Silver will report earnings next week"
+          }
+        ],
+        "summary": {
+          "upcoming_count": 1,
+          "fund_constituent_event_count": 1,
+          "funds_with_constituent_signal": 1
+        }
+      },
+      "newsPricingModel": {
+        "market_pressure_score": 0.08,
+        "market_regime": "NEUTRAL",
+        "symbol_pricing": [
+          {
+            "symbol": "SIL",
+            "pressure_score": 0.13,
+            "state": "PARTIAL_PRICED",
+            "confidence": 62
+          }
+        ]
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.67,
+        "header_coverage": 1.0,
+        "portfolio_grounding": 0.5
+      },
+      "must_contain": [
+        "SIL",
+        "Model Fikirleri (Varsayim)"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.67,
+          "header_coverage": 1.0,
+          "portfolio_grounding": 0.5
+        },
+        "must_contain": [
+          "SIL",
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.75,
+          "header_coverage": 1.0,
+          "portfolio_grounding": 0.6
+        },
+        "must_contain": [
+          "SIL",
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  },
+  {
+    "id": "case_005_ceo_signal_semiconductor",
+    "tags": [
+      "core",
+      "ceo_signal"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "7d",
+      "period": "weekly",
+      "coverage": {
+        "matched": 5,
+        "total": 9
+      },
+      "stats": {
+        "coverage_ratio": 0.55
+      },
+      "riskFlags": [],
+      "topNews": [
+        {
+          "title": "NVIDIA CEO says AI demand remains strong into 2026",
+          "source": "reuters.com",
+          "publishedAtISO": "2026-02-08T12:30:00Z"
+        }
+      ],
+      "localHeadlines": [],
+      "relatedNews": {
+        "AMD": [
+          {
+            "title": "Semiconductor peers benefit from stronger AI demand",
+            "direction": "positive",
+            "impactScore": 0.17
+          }
+        ]
+      },
+      "holdings": [
+        {
+          "symbol": "AMD",
+          "weight": 0.28,
+          "asset_class": "NASDAQ",
+          "sector": "SEMICONDUCTORS"
+        },
+        {
+          "symbol": "PLTR",
+          "weight": 0.14,
+          "asset_class": "NASDAQ",
+          "sector": "SOFTWARE"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "AMD",
+          "weight": 0.28,
+          "asset_class": "NASDAQ",
+          "sector": "SEMICONDUCTORS"
+        },
+        {
+          "symbol": "PLTR",
+          "weight": 0.14,
+          "asset_class": "NASDAQ",
+          "sector": "SOFTWARE"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [],
+        "sector_ceo_statements": [
+          {
+            "sector": "SEMICONDUCTORS",
+            "company": "NVIDIA",
+            "ceo": "Jensen Huang",
+            "stance": "positive",
+            "signal_score": 0.73,
+            "linked_symbols": [
+              "AMD"
+            ],
+            "headline": "NVIDIA CEO says AI demand remains strong into 2026"
+          }
+        ],
+        "summary": {
+          "ceo_statement_count": 1,
+          "sectors_with_ceo_signal": 1
+        }
+      },
+      "newsPricingModel": {
+        "market_pressure_score": 0.1,
+        "market_regime": "NEUTRAL",
+        "symbol_pricing": [
+          {
+            "symbol": "AMD",
+            "pressure_score": 0.21,
+            "state": "UNDERPRICED",
+            "confidence": 69
+          }
+        ]
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.68,
+        "header_coverage": 1.0,
+        "evidence_density": 0.5
+      },
+      "must_contain": [
+        "AMD"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.68,
+          "header_coverage": 1.0,
+          "evidence_density": 0.5
+        },
+        "must_contain": [
+          "AMD"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.76,
+          "header_coverage": 1.0,
+          "evidence_density": 0.6
+        },
+        "must_contain": [
+          "AMD"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  },
+  {
+    "id": "case_006_bearish_regime",
+    "tags": [
+      "core",
+      "bearish"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "24h",
+      "period": "daily",
+      "coverage": {
+        "matched": 4,
+        "total": 8
+      },
+      "stats": {
+        "coverage_ratio": 0.5
+      },
+      "riskFlags": [
+        "RISK_OFF_SPIKE"
+      ],
+      "topNews": [
+        {
+          "title": "Export controls tighten on advanced AI chips",
+          "source": "wsj.com",
+          "publishedAtISO": "2026-02-08T12:40:00Z"
+        },
+        {
+          "title": "Retail demand slowdown weighs on defensive names",
+          "source": "ft.com",
+          "publishedAtISO": "2026-02-08T12:20:00Z"
+        }
+      ],
+      "localHeadlines": [],
+      "relatedNews": {
+        "AMD": [
+          {
+            "title": "Chip restrictions create demand uncertainty",
+            "direction": "negative",
+            "impactScore": -0.2
+          }
+        ],
+        "SOKM": [
+          {
+            "title": "Consumer spending weakens",
+            "direction": "negative",
+            "impactScore": -0.12
+          }
+        ]
+      },
+      "holdings": [
+        {
+          "symbol": "AMD",
+          "weight": 0.25,
+          "asset_class": "NASDAQ",
+          "sector": "SEMICONDUCTORS"
+        },
+        {
+          "symbol": "SOKM",
+          "weight": 0.22,
+          "asset_class": "BIST",
+          "sector": "CONSUMER_RETAIL"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "AMD",
+          "weight": 0.25,
+          "asset_class": "NASDAQ",
+          "sector": "SEMICONDUCTORS"
+        },
+        {
+          "symbol": "SOKM",
+          "weight": 0.22,
+          "asset_class": "BIST",
+          "sector": "CONSUMER_RETAIL"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [],
+        "summary": {
+          "upcoming_count": 0
+        }
+      },
+      "newsPricingModel": {
+        "market_pressure_score": -0.19,
+        "market_regime": "BEARISH_PRICING",
+        "symbol_pricing": [
+          {
+            "symbol": "AMD",
+            "pressure_score": -0.28,
+            "state": "UNDERPRICED",
+            "confidence": 71
+          },
+          {
+            "symbol": "SOKM",
+            "pressure_score": -0.17,
+            "state": "PARTIAL_PRICED",
+            "confidence": 64
+          }
+        ]
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.66,
+        "header_coverage": 1.0,
+        "portfolio_grounding": 0.66
+      },
+      "must_contain": [
+        "Portfoy Hisse Etkisi"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.66,
+          "header_coverage": 1.0,
+          "portfolio_grounding": 0.66
+        },
+        "must_contain": [
+          "Portfoy Hisse Etkisi"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.74,
+          "header_coverage": 1.0,
+          "portfolio_grounding": 0.76
+        },
+        "must_contain": [
+          "Portfoy Hisse Etkisi"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  },
+  {
+    "id": "case_007_crypto_regulation",
+    "tags": [
+      "core",
+      "crypto",
+      "regulation"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "24h",
+      "period": "daily",
+      "coverage": {
+        "matched": 3,
+        "total": 7
+      },
+      "stats": {
+        "coverage_ratio": 0.43
+      },
+      "riskFlags": [
+        "RISK_OFF_SPIKE"
+      ],
+      "topNews": [
+        {
+          "title": "Regulators propose tighter stablecoin reserve rules",
+          "source": "bloomberg.com",
+          "publishedAtISO": "2026-02-08T11:10:00Z"
+        }
+      ],
+      "localHeadlines": [],
+      "relatedNews": {
+        "BTC": [
+          {
+            "title": "Stablecoin regulation may reduce short-term liquidity",
+            "direction": "negative",
+            "impactScore": -0.11
+          }
+        ],
+        "NEAR": [
+          {
+            "title": "Risk appetite cools in altcoin segment",
+            "direction": "negative",
+            "impactScore": -0.09
+          }
+        ]
+      },
+      "holdings": [
+        {
+          "symbol": "BTC",
+          "weight": 0.05,
+          "asset_class": "CRYPTO",
+          "sector": "CRYPTO"
+        },
+        {
+          "symbol": "NEAR",
+          "weight": 0.03,
+          "asset_class": "CRYPTO",
+          "sector": "CRYPTO"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "BTC",
+          "weight": 0.05,
+          "asset_class": "CRYPTO",
+          "sector": "CRYPTO"
+        },
+        {
+          "symbol": "NEAR",
+          "weight": 0.03,
+          "asset_class": "CRYPTO",
+          "sector": "CRYPTO"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [],
+        "summary": {}
+      },
+      "newsPricingModel": {
+        "market_pressure_score": -0.1,
+        "market_regime": "NEUTRAL",
+        "symbol_pricing": [
+          {
+            "symbol": "BTC",
+            "pressure_score": -0.12,
+            "state": "PARTIAL_PRICED",
+            "confidence": 60
+          },
+          {
+            "symbol": "NEAR",
+            "pressure_score": -0.1,
+            "state": "PARTIAL_PRICED",
+            "confidence": 57
+          }
+        ]
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.63,
+        "header_coverage": 1.0,
+        "portfolio_grounding": 0.66
+      },
+      "must_contain": [
+        "Model Fikirleri (Varsayim)"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.63,
+          "header_coverage": 1.0,
+          "portfolio_grounding": 0.66
+        },
+        "must_contain": [
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.71,
+          "header_coverage": 1.0,
+          "portfolio_grounding": 0.76
+        },
+        "must_contain": [
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  },
+  {
+    "id": "case_008_energy_supply_macro",
+    "tags": [
+      "core",
+      "energy",
+      "macro"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "7d",
+      "period": "weekly",
+      "coverage": {
+        "matched": 5,
+        "total": 11
+      },
+      "stats": {
+        "coverage_ratio": 0.45
+      },
+      "riskFlags": [
+        "FX_RISK_UP"
+      ],
+      "topNews": [
+        {
+          "title": "OPEC signals additional production cuts for next month",
+          "source": "reuters.com",
+          "publishedAtISO": "2026-02-08T14:10:00Z"
+        },
+        {
+          "title": "US CPI surprises on the upside",
+          "source": "wsj.com",
+          "publishedAtISO": "2026-02-08T13:50:00Z"
+        }
+      ],
+      "localHeadlines": [
+        {
+          "title": "TUPRS icin rafineri marj baskisi izleniyor",
+          "source": "dunya.com",
+          "publishedAtISO": "2026-02-08T09:35:00Z",
+          "tags": [
+            "PORTFOLIO_SYMBOL_MATCH",
+            "PORTFOLIO_SECTOR_MATCH"
+          ],
+          "portfolioSymbols": [
+            "TUPRS"
+          ],
+          "portfolioSectors": [
+            "ENERGY"
+          ],
+          "relevanceHint": 7
+        }
+      ],
+      "relatedNews": {
+        "TUPRS": [
+          {
+            "title": "Higher oil input cost may pressure margins",
+            "direction": "negative",
+            "impactScore": -0.1
+          }
+        ]
+      },
+      "holdings": [
+        {
+          "symbol": "TUPRS",
+          "weight": 0.23,
+          "asset_class": "BIST",
+          "sector": "ENERGY"
+        },
+        {
+          "symbol": "ENJSA",
+          "weight": 0.18,
+          "asset_class": "BIST",
+          "sector": "POWER_UTILITIES"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "TUPRS",
+          "weight": 0.23,
+          "asset_class": "BIST",
+          "sector": "ENERGY"
+        },
+        {
+          "symbol": "ENJSA",
+          "weight": 0.18,
+          "asset_class": "BIST",
+          "sector": "POWER_UTILITIES"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [],
+        "summary": {}
+      },
+      "newsPricingModel": {
+        "market_pressure_score": -0.05,
+        "market_regime": "NEUTRAL",
+        "symbol_pricing": []
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.64,
+        "header_coverage": 1.0,
+        "evidence_density": 0.65
+      },
+      "must_contain": [
+        "Sektor Etkisi"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.64,
+          "header_coverage": 1.0,
+          "evidence_density": 0.65
+        },
+        "must_contain": [
+          "Sektor Etkisi"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.72,
+          "header_coverage": 1.0,
+          "evidence_density": 0.75
+        },
+        "must_contain": [
+          "Sektor Etkisi"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  },
+  {
+    "id": "case_009_monthly_plan_focus",
+    "tags": [
+      "core",
+      "monthly_plan"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "30d",
+      "period": "monthly",
+      "coverage": {
+        "matched": 7,
+        "total": 13
+      },
+      "stats": {
+        "coverage_ratio": 0.54
+      },
+      "riskFlags": [],
+      "topNews": [
+        {
+          "title": "PLTR will launch new enterprise AI suite next month",
+          "source": "reuters.com",
+          "publishedAtISO": "2026-02-08T12:05:00Z"
+        },
+        {
+          "title": "AMD investor day scheduled for March",
+          "source": "bloomberg.com",
+          "publishedAtISO": "2026-02-08T11:45:00Z"
+        }
+      ],
+      "localHeadlines": [],
+      "relatedNews": {
+        "PLTR": [
+          {
+            "title": "Platform launch can improve enterprise deal flow",
+            "direction": "positive",
+            "impactScore": 0.13
+          }
+        ],
+        "AMD": [
+          {
+            "title": "Investor day could reset guidance expectations",
+            "direction": "positive",
+            "impactScore": 0.1
+          }
+        ]
+      },
+      "holdings": [
+        {
+          "symbol": "PLTR",
+          "weight": 0.14,
+          "asset_class": "NASDAQ",
+          "sector": "SOFTWARE"
+        },
+        {
+          "symbol": "AMD",
+          "weight": 0.26,
+          "asset_class": "NASDAQ",
+          "sector": "SEMICONDUCTORS"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "PLTR",
+          "weight": 0.14,
+          "asset_class": "NASDAQ",
+          "sector": "SOFTWARE"
+        },
+        {
+          "symbol": "AMD",
+          "weight": 0.26,
+          "asset_class": "NASDAQ",
+          "sector": "SEMICONDUCTORS"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [
+          {
+            "symbol": "PLTR",
+            "event_type": "PRODUCT",
+            "eta_days": 18,
+            "headline": "PLTR will launch new enterprise AI suite next month"
+          },
+          {
+            "symbol": "AMD",
+            "event_type": "INVESTOR_DAY",
+            "eta_days": 23,
+            "headline": "AMD investor day scheduled for March"
+          }
+        ],
+        "monthly_plan": {
+          "window_days": 30,
+          "items": [
+            {
+              "symbol": "PLTR",
+              "event_type": "PRODUCT",
+              "eta_days": 18,
+              "headline": "PLTR will launch new enterprise AI suite next month"
+            },
+            {
+              "symbol": "AMD",
+              "event_type": "INVESTOR_DAY",
+              "eta_days": 23,
+              "headline": "AMD investor day scheduled for March"
+            }
+          ]
+        },
+        "summary": {
+          "upcoming_count": 2,
+          "monthly_plan_count": 2
+        }
+      },
+      "newsPricingModel": {
+        "market_pressure_score": 0.09,
+        "market_regime": "NEUTRAL",
+        "symbol_pricing": []
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.68,
+        "header_coverage": 1.0,
+        "portfolio_grounding": 0.66
+      },
+      "must_contain": [
+        "Model Fikirleri (Varsayim)",
+        "Portfoy Hisse Etkisi"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.68,
+          "header_coverage": 1.0,
+          "portfolio_grounding": 0.66
+        },
+        "must_contain": [
+          "Model Fikirleri (Varsayim)",
+          "Portfoy Hisse Etkisi"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.76,
+          "header_coverage": 1.0,
+          "portfolio_grounding": 0.76
+        },
+        "must_contain": [
+          "Model Fikirleri (Varsayim)",
+          "Portfoy Hisse Etkisi"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  },
+  {
+    "id": "case_010_sparse_input_edge",
+    "tags": [
+      "edge",
+      "sparse"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "24h",
+      "period": "daily",
+      "coverage": {
+        "matched": 0,
+        "total": 0
+      },
+      "stats": {
+        "coverage_ratio": 0.0
+      },
+      "riskFlags": [],
+      "topNews": [],
+      "localHeadlines": [],
+      "relatedNews": {},
+      "holdings": [
+        {
+          "symbol": "ASTOR",
+          "weight": 0.3,
+          "asset_class": "BIST",
+          "sector": "POWER_UTILITIES"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "ASTOR",
+          "weight": 0.3,
+          "asset_class": "BIST",
+          "sector": "POWER_UTILITIES"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [],
+        "sector_ceo_statements": [],
+        "summary": {}
+      },
+      "newsPricingModel": {
+        "market_pressure_score": 0.0,
+        "market_regime": "NEUTRAL",
+        "symbol_pricing": []
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.5,
+        "header_coverage": 1.0,
+        "assumption_hygiene": 0.66
+      },
+      "must_contain": [
+        "Model Fikirleri (Varsayim)"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.5,
+          "header_coverage": 1.0,
+          "assumption_hygiene": 0.66
+        },
+        "must_contain": [
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.58,
+          "header_coverage": 1.0,
+          "assumption_hygiene": 0.76
+        },
+        "must_contain": [
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  },
+  {
+    "id": "case_011_summary_quality_regression",
+    "tags": [
+      "edge",
+      "quality_regression",
+      "real_bug"
+    ],
+    "input_payload": {
+      "asOfISO": "2026-02-08T18:00:00Z",
+      "baseCurrency": "TRY",
+      "newsHorizon": "24h",
+      "period": "daily",
+      "coverage": {
+        "matched": 3,
+        "total": 9
+      },
+      "stats": {
+        "coverage_ratio": 0.33
+      },
+      "riskFlags": [
+        "FX_RISK_UP"
+      ],
+      "topNews": [
+        {
+          "title": "Strategy increases Bitcoin holdings above 700,000 BTC",
+          "source": "reuters.com",
+          "publishedAtISO": "2026-02-08T14:00:00Z"
+        },
+        {
+          "title": "Nvidia shares gain after AI spending outlook update",
+          "source": "wsj.com",
+          "publishedAtISO": "2026-02-08T13:20:00Z"
+        }
+      ],
+      "localHeadlines": [
+        {
+          "title": "ASTOR ve ENJSA tarafinda bilanco takvimi yaklasiyor",
+          "source": "kap.org.tr",
+          "publishedAtISO": "2026-02-08T10:00:00Z",
+          "tags": [
+            "PORTFOLIO_SYMBOL_MATCH",
+            "EARNINGS_THEME"
+          ],
+          "portfolioSymbols": [
+            "ASTOR",
+            "ENJSA"
+          ],
+          "portfolioSectors": [
+            "POWER_UTILITIES"
+          ],
+          "relevanceHint": 8
+        }
+      ],
+      "relatedNews": {
+        "ASTOR": [
+          {
+            "title": "ASTOR bilan\u00e7o beklentileri yukari revize edildi",
+            "direction": "positive",
+            "impactScore": 0.09
+          }
+        ],
+        "BTC": [
+          {
+            "title": "Corporate treasury demand keeps BTC bid strong",
+            "direction": "positive",
+            "impactScore": 0.12
+          }
+        ],
+        "AMD": [
+          {
+            "title": "AI capex momentum supports semiconductor demand",
+            "direction": "positive",
+            "impactScore": 0.08
+          }
+        ]
+      },
+      "holdings": [
+        {
+          "symbol": "ASTOR",
+          "weight": 0.3,
+          "asset_class": "BIST",
+          "sector": "POWER_UTILITIES"
+        },
+        {
+          "symbol": "AMD",
+          "weight": 0.24,
+          "asset_class": "NASDAQ",
+          "sector": "SEMICONDUCTORS"
+        },
+        {
+          "symbol": "BTC",
+          "weight": 0.05,
+          "asset_class": "CRYPTO",
+          "sector": "CRYPTO"
+        }
+      ],
+      "holdings_full": [
+        {
+          "symbol": "ASTOR",
+          "weight": 0.3,
+          "asset_class": "BIST",
+          "sector": "POWER_UTILITIES"
+        },
+        {
+          "symbol": "AMD",
+          "weight": 0.24,
+          "asset_class": "NASDAQ",
+          "sector": "SEMICONDUCTORS"
+        },
+        {
+          "symbol": "BTC",
+          "weight": 0.05,
+          "asset_class": "CRYPTO",
+          "sector": "CRYPTO"
+        }
+      ],
+      "recommendations": [],
+      "announcementTracker": {
+        "portfolio_upcoming": [
+          {
+            "symbol": "ASTOR",
+            "event_type": "EARNINGS",
+            "eta_days": 4,
+            "headline": "ASTOR will report earnings this week"
+          },
+          {
+            "symbol": "AMD",
+            "event_type": "INVESTOR_DAY",
+            "eta_days": 12,
+            "headline": "AMD investor day planned for next month"
+          }
+        ],
+        "summary": {
+          "upcoming_count": 2
+        }
+      },
+      "newsPricingModel": {
+        "market_pressure_score": 0.11,
+        "market_regime": "NEUTRAL",
+        "symbol_pricing": [
+          {
+            "symbol": "ASTOR",
+            "pressure_score": 0.14,
+            "state": "PARTIAL_PRICED",
+            "confidence": 64
+          },
+          {
+            "symbol": "AMD",
+            "pressure_score": 0.16,
+            "state": "UNDERPRICED",
+            "confidence": 69
+          }
+        ]
+      }
+    },
+    "expect": {
+      "min_scores": {
+        "overall": 0.69,
+        "header_coverage": 1.0,
+        "evidence_density": 0.65,
+        "portfolio_grounding": 0.66,
+        "actionability": 0.5
+      },
+      "must_contain": [
+        "Haber Temelli Icgoruler",
+        "Portfoy Hisse Etkisi",
+        "Model Fikirleri (Varsayim)"
+      ],
+      "must_regex": [
+        "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+      ],
+      "forbid": [
+        "basligina dayali etki notu"
+      ]
+    },
+    "expect_profiles": {
+      "soft": {
+        "min_scores": {
+          "overall": 0.69,
+          "header_coverage": 1.0,
+          "evidence_density": 0.65,
+          "portfolio_grounding": 0.66,
+          "actionability": 0.5
+        },
+        "must_contain": [
+          "Haber Temelli Icgoruler",
+          "Portfoy Hisse Etkisi",
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      },
+      "strict": {
+        "min_scores": {
+          "overall": 0.77,
+          "header_coverage": 1.0,
+          "evidence_density": 0.75,
+          "portfolio_grounding": 0.76,
+          "actionability": 0.6
+        },
+        "must_contain": [
+          "Haber Temelli Icgoruler",
+          "Portfoy Hisse Etkisi",
+          "Model Fikirleri (Varsayim)"
+        ],
+        "must_regex": [
+          "\\[KANIT:[TL](?:\\d+|\\?)\\]"
+        ],
+        "forbid": [
+          "basligina dayali etki notu"
+        ]
+      }
+    }
+  }
+]
